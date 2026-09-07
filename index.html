@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE MONOMYTHIAN</title>
+<link rel="stylesheet" href="styles/terminal.css">
+</head>
+<body data-app="home">
+<div class="wrap">
+  <header>
+    <span class="brand">THE&nbsp;MONOMYTHIAN<span class="glyph"> &#9613;</span></span>
+    <span class="hsep">&#183;</span>
+    <span class="meta"><span id="opId">arch-7</span> <span class="hsep">&#183;</span> tier-1 <span class="hsep">&#183;</span> <span class="here" id="hLoc">home</span></span>
+  </header>
+
+  <div id="output"></div>
+
+  <div class="composer">
+    <div class="slashmenu" id="slashmenu"></div>
+    <div class="inputbox" id="inputbox">
+      <span class="prompt" id="prompt">&#8250;</span>
+      <input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type / to switch apps" />
+    </div>
+    <div class="hint">
+      <span><b>type</b> to talk</span>
+      <span><b>/</b> apps</span>
+      <span><b>enter</b> send</span>
+      <span class="keys-only"><b>&#8593; &#8595;</b> menu / files</span>
+    </div>
+  </div>
+</div>
+
+<!-- engine (order matters) -->
+<script src="src/engine/core.js"></script>
+<script src="src/engine/ui.js"></script>
+<script src="src/engine/apps.js"></script>
+<script src="src/engine/connect.js"></script>
+<script src="src/engine/scene.js"></script>
+
+<!-- content -->
+<script src="src/content/archive-data.js"></script>
+<script src="src/content/hosts.js"></script>
+<script src="src/content/cycles/cycle1.js"></script>
+<script src="src/content/cycles/cycle2.js"></script>
+<script src="src/content/cycles/cycle3.js"></script>
+<script src="src/content/cycles/cycle4.js"></script>
+<script src="src/content/cycles/cycle5.js"></script>
+<script src="src/content/cycles/cycle6.js"></script>
+<script src="src/content/cycles/cycle7.js"></script>
+<script src="src/content/cycles/cycle8.js"></script>
+
+<!-- boot -->
+<script src="src/main.js"></script>
+</body>
+</html>
