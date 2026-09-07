@@ -1,0 +1,20 @@
+{
+  "name": "the-monomythian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A terminal narrative game set after humanity's pyrrhic war on its machines. Act 1.",
+  "scripts": {
+    "build": "node build.js",
+    "start": "python3 -m http.server 8000",
+    "serve": "python3 -m http.server 8000",
+    "test": "node smoke-test.js && node run-sim.js && node dialogue-sweep.js",
+    "test:content": "node smoke-test.js",
+    "test:runtime": "node run-sim.js",
+    "test:dialogue": "node dialogue-sweep.js"
+  },
+  "keywords": ["game", "interactive-fiction", "terminal", "narrative"],
+  "license": "SEE LICENSE FILE",
+  "engines": {
+    "node": ">=16"
+  }
+}

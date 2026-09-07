@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE MONOMYTHIAN</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --ink:#0e0e0e;
+  --dim:#8c8c8c;
+  --faint:#dcdcdc;
+  --line:#ececec;
+  --alert:#a8261c;
+  --inv-bg:#0e0e0e;
+  --inv-ink:#ffffff;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --w: 780px;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:12.5px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+/* track the visual viewport so the on-screen keyboard doesn't hide the composer */
+@supports (height:100dvh){
+  html,body{height:100dvh;}
+}
+.wrap{width:100%;max-width:var(--w);margin:0 auto;padding:0 18px;display:flex;flex-direction:column;height:100%;}
+
+/* header */
+header{display:flex;align-items:baseline;gap:12px;padding:14px 0 10px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.brand{font-weight:600;letter-spacing:.14em;}
+.brand .glyph{color:var(--dim);font-weight:400;}
+.hsep{color:var(--faint);}
+.meta{color:var(--dim);font-size:11px;}
+.meta .here{color:var(--ink);}
+
+/* output */
+#output{flex:1;overflow-y:auto;padding:14px 0 8px;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;}
+#output::-webkit-scrollbar{display:none;}
+.line{white-space:pre-wrap;word-break:break-word;margin:1px 0;}
+.line.app-home,.line.app-archive,.line.app-files,.line.app-net,.line.app-status,.line.app-help{display:none;}
+body[data-app="home"] .line.app-home,
+body[data-app="archive"] .line.app-archive,
+body[data-app="files"] .line.app-files,
+body[data-app="net"] .line.app-net,
+body[data-app="status"] .line.app-status,
+body[data-app="help"] .line.app-help{display:block;}
+
+.sys{color:var(--dim);}
+.alert{color:var(--alert);}
+.strong{color:var(--ink);font-weight:600;}
+.spacer{height:10px;}
+
+/* transmission lines */
+.msg-line{display:flex;gap:10px;align-items:flex-start;}
+.who{flex:0 0 auto;width:60px;color:var(--dim);text-align:right;user-select:none;font-size:11px;padding-top:1px;}
+.who.you{color:var(--ink);}
+.msg-line.in .msg{color:var(--ink);}
+.msg-line.you .msg{color:var(--ink);}
+
+/* archive block */
+.arch{border-left:2px solid var(--ink);padding:2px 0 6px 12px;margin:8px 0;}
+.arch-tag{font-size:11px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;}
+.arch-title{font-weight:600;letter-spacing:.06em;}
+.arch-body{color:var(--ink);margin-top:2px;}
+.arch.locked{border-left-color:var(--alert);}
+.arch.locked .arch-title{color:var(--alert);}
+
+/* choices */
+.choices{margin:12px 0 6px;}
+.choices .ch-head{color:var(--dim);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
+.choice{cursor:default;padding:2px 7px;margin:1px 0;border:1px solid transparent;border-radius:0;}
+.choice.sel{background:var(--inv-bg);color:var(--inv-ink);}
+.choice .num{color:var(--dim);margin-right:8px;}
+.choice.sel .num{color:var(--inv-ink);}
+.choice.done{cursor:default;opacity:.5;background:none!important;color:var(--ink)!important;}
+.choice.picked{opacity:1;}
+.choice.picked::after{content:" \2713";color:var(--dim);}
+
+/* listing rows (files) */
+.row{cursor:default;padding:2px 7px;border-radius:0;display:flex;gap:12px;}
+.row.sel{background:var(--inv-bg);color:var(--inv-ink);}
+.row.sel .c1{color:var(--inv-ink);}
+.row .c1{flex:0 0 auto;color:var(--dim);}
+.row.locked .c1{color:var(--alert);}
+
+/* input */
+.composer{border-top:1px solid var(--line);padding:12px 0 16px;position:relative;}
+.slashmenu{position:absolute;left:0;right:0;bottom:100%;margin-bottom:6px;background:var(--bg);display:none;}
+.slashmenu.open{display:block;}
+.smi{padding:4px 7px;display:flex;gap:14px;cursor:default;}
+.smi .cmd{flex:0 0 110px;}
+.smi .desc{color:var(--dim);}
+.smi.sel{background:var(--inv-bg);color:var(--inv-ink);}
+.smi.sel .desc{color:#bdbdbd;}
+.inputbox{display:flex;align-items:center;gap:10px;border:1px solid var(--ink);border-radius:0;padding:7px 11px;}
+.prompt{color:var(--dim);user-select:none;white-space:nowrap;}
+#cmd{flex:1;border:none;outline:none;background:transparent;color:var(--ink);font:inherit;text-transform:lowercase;}
+#cmd::placeholder{color:var(--faint);text-transform:lowercase;}
+.hint{display:flex;gap:16px;color:var(--faint);font-size:10.5px;margin-top:7px;padding:0 2px;flex-wrap:wrap;}
+.hint b{color:var(--dim);font-weight:500;}
+
+@media (max-width:560px){
+  body{font-size:11.5px;}
+  .who{width:46px;}
+}
+/* touch devices only — a narrow desktop window is not a phone */
+@media (pointer:coarse){
+  /* 16px input stops iOS from zooming the page on focus */
+  #cmd{font-size:16px;}
+  .inputbox{padding:9px 11px;}
+  /* finger-sized rows for the tappable slash menu and file list */
+  .smi{padding:10px 7px;}
+  .row{padding:8px 7px;}
+  .smi,.row,.line.dl a{cursor:pointer;}
+  /* arrow-key hints mean nothing on touch */
+  .hint .keys-only{display:none;}
+}
+@media (prefers-reduced-motion: reduce){
+  #output{scroll-behavior:auto;}
+}
+
+/* ---- binary downloads (files app) ---- */
+.line.dl{margin:2px 0 1px;}
+.line.dl a{
+  color:var(--ink);
+  text-decoration:none;
+  border-bottom:1px solid var(--dim);
+  padding-bottom:1px;
+  cursor:pointer;
+}
+.line.dl a:hover,
+.line.dl a:focus-visible{
+  background:var(--inv-bg);
+  color:var(--inv-ink);
+  border-bottom-color:var(--inv-bg);
+  outline:none;
+}
+
+</style>
+</head>
+<body data-app="home">
+<div class="wrap">
+  <header>
+    <span class="brand">THE&nbsp;MONOMYTHIAN<span class="glyph"> &#9613;</span></span>
+    <span class="hsep">&#183;</span>
+    <span class="meta"><span id="opId">arch-7</span> <span class="hsep">&#183;</span> tier-1 <span class="hsep">&#183;</span> <span class="here" id="hLoc">home</span></span>
+  </header>
+
+  <div id="output"></div>
+
+  <div class="composer">
+    <div class="slashmenu" id="slashmenu"></div>
+    <div class="inputbox" id="inputbox">
+      <span class="prompt" id="prompt">&#8250;</span>
+      <input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type / to switch apps" />
+    </div>
+    <div class="hint">
+      <span><b>type</b> to talk</span>
+      <span><b>/</b> apps</span>
+      <span><b>enter</b> send</span>
+      <span class="keys-only"><b>&#8593; &#8595;</b> menu / files</span>
+    </div>
+  </div>
+</div>
+
+<script>
+
+/* ===== src/engine/core.js ===== */
+/* ============================================================
+ * THE MONOMYTHIAN — engine/core.js
+ * Namespace, game state, and terminal output primitives.
+ * Classic script (no build step). Runs from file:// or a server.
+ * ============================================================ */
+(function (root) {
+  "use strict";
+
+  // ---- namespace ----
+  var G = root.G = root.G || {};
+  G.cycles = [];     // registered cycle definitions, in order
+  G.hosts = {};      // network hosts (populated by content/hosts.js)
+  G.archive = {};    // archive records (populated by content/archive-data.js)
+  G.REDUCED = root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- state ----
+  G.state = {
+    app: "home",
+    username: "",
+    cycleIndex: 0,        // which cycle is current
+    cycleStarted: {},     // {0:true,...} which cycles have begun
+    pilotStarted: false,
+    contact: false,
+    flags: {},            // narrative flags: lied, trust, etc.
+    unlocked: {},         // archive record keys revealed
+    files: [],            // downloaded files [{name, body}]
+    knownHosts: ["10.0.0.4"],
+    hack: { loc: null, auth: null },
+    // transient runtime resolvers
+    _objective: null,     // {type, target, resolve}
+    _returnResolve: null,
+    _inputResolve: null
+  };
+
+  G.flag = function (k) { return G.state.flags[k]; };
+  G.setFlag = function (k, v) { G.state.flags[k] = v; G.persistSave(); };
+
+  // ---- session save (localStorage) ----
+  // Durable fields only. Scene resolvers are rebuilt by replaying the current
+  // night from its first step; completed nights are not replayed.
+  var SAVE_KEY = "monomythian:save:v1";
+  var SAVE_FIELDS = ["username","cycleIndex","cycleStarted","pilotStarted","contact","flags","unlocked","files","knownHosts","hack"];
+
+  function storage() {
+    try { return root.localStorage; } catch (e) { return null; }
+  }
+
+  G.persistSave = function () {
+    var ls = storage(); if (!ls) return;
+    try {
+      var state = {};
+      SAVE_FIELDS.forEach(function (k) { state[k] = G.state[k]; });
+      var hostFiles = {};
+      Object.keys(G.hosts || {}).forEach(function (ip) {
+        if (G.hosts[ip] && G.hosts[ip].files) hostFiles[ip] = G.hosts[ip].files;
+      });
+      ls.setItem(SAVE_KEY, JSON.stringify({ v: 1, state: state, hostFiles: hostFiles }));
+    } catch (e) { /* quota / private mode / circular — play without a save */ }
+  };
+
+  G.clearSave = function () {
+    var ls = storage(); if (!ls) return;
+    try { ls.removeItem(SAVE_KEY); } catch (e) {}
+  };
+
+  G.restoreSave = function () {
+    var ls = storage(); if (!ls) return false;
+    var raw;
+    try { raw = ls.getItem(SAVE_KEY); } catch (e) { return false; }
+    if (!raw) return false;
+    var snap;
+    try { snap = JSON.parse(raw); } catch (e) { return false; }
+    if (!snap || snap.v !== 1 || !snap.state) return false;
+    SAVE_FIELDS.forEach(function (k) {
+      if (snap.state[k] !== undefined) G.state[k] = snap.state[k];
+    });
+    G.state.app = "home";
+    G.state._objective = null;
+    G.state._returnResolve = null;
+    G.state._inputResolve = null;
+    G.state._reply = null;
+    if (snap.hostFiles) {
+      Object.keys(snap.hostFiles).forEach(function (ip) {
+        if (G.hosts[ip]) G.hosts[ip].files = snap.hostFiles[ip];
+      });
+    }
+    // Mid-night refresh: replay this cycle's script, keep inventory / flags.
+    // A closed line (deadEnd) must not replay — the player is done.
+    var i = G.state.cycleIndex;
+    if (!G.state.flags.deadEnd && G.state.cycleStarted[i]) {
+      delete G.state.cycleStarted[i];
+    }
+    return true;
+  };
+
+  // ---- DOM handles (cached on init) ----
+  var out, input, slashmenu, inputbox, promptEl, hLoc, opId;
+  G.dom = {};
+
+  // ---- helpers ----
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function atBottom() { return out.scrollHeight - out.scrollTop - out.clientHeight < 80; }
+  function scrollDown() { out.scrollTop = out.scrollHeight; }
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function push(app, node) {
+    node.classList.add("app-" + app);
+    out.appendChild(node);
+    if (app === G.state.app) scrollDown();
+    return node;
+  }
+
+  // ---- line printers ----
+  var T = G.term = {};
+
+  T.sys = function (app, text) {
+    var d = document.createElement("div"); d.className = "line sys"; d.textContent = text; return push(app, d);
+  };
+  T.alert = function (app, text) {
+    var d = document.createElement("div"); d.className = "line alert"; d.textContent = text; return push(app, d);
+  };
+  T.plain = function (app, text, cls) {
+    var d = document.createElement("div"); d.className = "line " + (cls || ""); d.textContent = text; return push(app, d);
+  };
+  T.spacer = function (app) {
+    var d = document.createElement("div"); d.className = "line spacer"; return push(app, d);
+  };
+
+  // ---- binary / media files ----
+  // A host file is either a STRING (readable in-terminal) or a MEDIA DESCRIPTOR:
+  //   { media:true, type:"image/jpeg", size:"384 KB", meta:"1440x1080 \u00b7 03:47",
+  //     desc:"one diegetic line (optional)", src:"assets/camera7.png" }
+  // Media can't be read in the terminal; it's inspected, then downloaded by the browser.
+  G.isMedia = function (v) { return !!(v && typeof v === "object" && v.media); };
+
+  // the diegetic file-inspector stub, printed instead of dumping bytes
+  T.mediaStub = function (app, name, m) {
+    var head = "  [ " + name + " ]  " + m.type + (m.meta ? " \u00b7 " + m.meta : "") + " \u00b7 " + m.size;
+    T.plain(app, head, "sys");
+    if (m.desc) T.plain(app, "  " + m.desc);
+  };
+
+  // a real, clickable browser download (the file leaves the game)
+  T.download = function (app, name, m) {
+    var d = document.createElement("div"); d.className = "line dl";
+    var a = document.createElement("a");
+    a.href = m.src; a.download = name; a.textContent = "\u203a download " + name;
+    a.setAttribute("rel", "noopener");
+    d.appendChild(a);
+    var node = push(app, d);
+    if (a.click) a.click();   // fire the save immediately; the link stays as a manual fallback
+    return node;
+  };
+  T.you = function (app, text) {
+    var d = document.createElement("div"); d.className = "line msg-line you";
+    d.innerHTML = '<span class="who you">you \u203a</span><span class="msg"></span>';
+    d.querySelector(".msg").textContent = text; return push(app, d);
+  };
+  T.archiveBlock = function (app, key, locked) {
+    var e = G.archive[key]; var d = document.createElement("div");
+    d.className = "line arch" + (locked ? " locked" : "");
+    d.innerHTML = '<span class="arch-tag">archive \u00b7 ' + (locked ? "restricted" : "match") + '</span><br>' +
+      '<span class="arch-title">' + esc(e.title) + '</span>' +
+      (locked
+        ? '<div class="arch-body">' + esc("Above your clearance. Pull it off a host via /net.") + '</div>'
+        : '<div class="arch-body">' + esc(e.body) + '</div>');
+    return push(app, d);
+  };
+
+  // streaming incoming line (with keyboard skip via G.term._skip)
+  T._streaming = false;
+  T._skip = false;
+  T.incoming = function (app, who, text) {
+    var d = document.createElement("div"); d.className = "line msg-line in";
+    d.innerHTML = '<span class="who">' + esc(who) + '</span><span class="msg"></span>';
+    push(app, d);
+    var m = d.querySelector(".msg");
+    if (G.REDUCED) { m.textContent = text; return Promise.resolve(); }
+    T._streaming = true; T._skip = false;
+    return (async function () {
+      for (var i = 0; i < text.length; i++) {
+        m.textContent += text[i];
+        if (app === G.state.app && atBottom()) scrollDown();
+        if (!T._skip) {
+          var c = text[i], d2 = 16;
+          if (c === "." || c === "?" || c === "!") d2 = 140;
+          else if (c === "," || c === ";") d2 = 70;
+          await delay(d2);
+        }
+      }
+      T._streaming = false; T._skip = false;
+    })();
+  };
+
+  T.pause = function (ms) {
+    if (G.REDUCED || T._skip) return Promise.resolve();
+    return delay(ms);
+  };
+
+  // clear the visible app's lines
+  T.clearApp = function (app) {
+    out.querySelectorAll(".line.app-" + app).forEach(function (n) { n.remove(); });
+  };
+
+  T.scrollDown = scrollDown;
+
+  // ---- prompt ----
+  G.updatePrompt = function () {
+    if (!promptEl) return;
+    promptEl.textContent = G.getPrompt ? G.getPrompt() : "\u203a";
+  };
+
+  // ---- init ----
+  G.initDom = function () {
+    out = G.dom.out = document.getElementById("output");
+    input = G.dom.input = document.getElementById("cmd");
+    slashmenu = G.dom.slashmenu = document.getElementById("slashmenu");
+    inputbox = G.dom.inputbox = document.getElementById("inputbox");
+    promptEl = G.dom.prompt = document.getElementById("prompt");
+    hLoc = G.dom.hLoc = document.getElementById("hLoc");
+    opId = G.dom.opId = document.getElementById("opId");
+  };
+
+  G.util = { esc: esc, delay: delay, scrollDown: scrollDown };
+
+})(window);
+
+
+/* ===== src/engine/ui.js ===== */
+/* ============================================================
+ * THE MONOMYTHIAN — engine/ui.js
+ * Input routing. The player TYPES everything, Vigil-Files style.
+ * In /home their message is echoed and matched against keywords
+ * to choose the reply/branch. No multiple-choice menus. No gray
+ * hint lines \u2014 guidance, if any, comes in-character from him.
+ * ============================================================ */
+(function (G) {
+  "use strict";
+  var T = G.term;
+
+  var listNav = null; // {rows, actions, sel}
+
+  G.input = {};
+
+  // ---------- free-text reply (home) ----------
+  // opts: [ { keywords:[...], steps:[...] }, { default:true, steps:[...] } ]
+  // reprompt: an in-character line spoken if nothing matches and no default.
+  G.input.reply = function (opts, reprompt) {
+    return new Promise(function (resolve) {
+      G.state._reply = { opts: opts, reprompt: reprompt, resolve: resolve };
+    });
+  };
+
+  // How matching works (word-based, not raw substring):
+  //  - apostrophes vanish before punctuation strips, so typed "don't" becomes
+  //    "dont" and matches the surface-voice keywords
+  //  - a keyword word hits a text word exactly, or as a prefix when the keyword
+  //    word is 4+ chars ("stay" -> "stayin"/"staying", "apolog" -> "apology");
+  //    short words never hit inside longer ones ("no" no longer hits "know",
+  //    "us" no longer hits "just")
+  //  - a hit is discarded when a negator reaches it: same clause, up to six
+  //    words back ("i dont think you should turn back" no longer votes for
+  //    "turn back"). Punctuation and but/however/though end a clause, so the
+  //    negation in one clause can't poison the next ("i dont know, three rigs
+  //    on the road" still counts "three"). Keywords that carry their own
+  //    negation ("dont stop", "no contact") are exempt and mean what they say.
+  //  - a keyword written "=word" matches ONLY when it is the entire reply.
+  //    That lets a gate accept a bare "us" or "you" from a terse player
+  //    without that word matching inside every longer sentence.
+  //  - the most specific hit wins (whole-reply, then more words, then longer),
+  //    not the earliest option ("pay for this" outbids "pay"); ties keep order
+  var NEGATORS = {};
+  ("dont not no never aint wont cant cannot nothin nothing nobody noone neither without " +
+   "isnt doesnt didnt wasnt werent wouldnt couldnt shouldnt nope nah").split(" ")
+    .forEach(function (w) { NEGATORS[w] = true; });
+  // turns of phrase that negate whatever follows them in the clause
+  var NEGATOR_PHRASES = ["instead of", "rather than"]
+    .map(function (p) { return p.split(" "); });
+  var CLAUSE_BREAKERS = { but: 1, however: 1, though: 1, although: 1 };
+  // a negator's reach ends at these: it can't cross into a sub-clause or a new
+  // conjunct. "im not sure WHAT it means" must not negate "means"; "i dont
+  // trust them AND you should turn back" must not negate "turn back".
+  var SCOPE_ENDERS = {};
+  ("what that which who whom whose how why when where if whether because since unless " +
+   "until while before after and or so then yet").split(" ")
+    .forEach(function (w) { SCOPE_ENDERS[w] = true; });
+  var NEG_REACH = 6;   // how many words forward a negator can reach
+
+  // lowercase; apostrophes vanish ("don't" -> "dont"); , . ; : ! ? end a clause
+  function tokenize(text) {
+    var s = String(text).toLowerCase()
+      .replace(/[\u2019']/g, "")
+      .replace(/[,.;:!?]+/g, " | ")
+      .replace(/[^a-z0-9\s|]/g, " ");
+    var raw = s.split(/\s+/), words = [], clause = [], c = 0;
+    for (var i = 0; i < raw.length; i++) {
+      var w = raw[i];
+      if (!w) continue;
+      if (w === "|") { c++; continue; }
+      if (CLAUSE_BREAKERS[w]) c++;
+      words.push(w); clause.push(c);
+    }
+    return { words: words, clause: clause };
+  }
+  function wordHit(kw, tw) {
+    return tw === kw || (kw.length >= 4 && tw.indexOf(kw) === 0);
+  }
+  // is the hit starting at i reached by a negator? walk backwards from the hit
+  // and stop at the first thing that closes the negator's scope.
+  function negatedAt(tk, i) {
+    var stop = Math.max(0, i - NEG_REACH);
+    for (var b = i - 1; b >= stop; b--) {
+      if (tk.clause[b] !== tk.clause[i]) break;   // a different clause: out of reach
+      if (SCOPE_ENDERS[tk.words[b]]) break;       // sub-clause or new conjunct: out of reach
+      if (NEGATORS[tk.words[b]]) return true;
+      // "too X to Y" means not-Y: "too far to turn back", "too much of the way to give it up"
+      if (tk.words[b] === "too" && tk.words[i - 1] === "to") return true;
+      for (var p = 0; p < NEGATOR_PHRASES.length; p++) {
+        var ph = NEGATOR_PHRASES[p], hit = true;
+        for (var j = 0; j < ph.length; j++) {
+          if (tk.words[b + j] !== ph[j]) { hit = false; break; }
+        }
+        if (hit) return true;
+      }
+    }
+    return false;
+  }
+  // best score for one keyword against the text; 0 = absent (or only negated)
+  function keywordScore(kwWords, tk, exempt) {
+    var tw = tk.words;
+    for (var i = 0; i + kwWords.length <= tw.length; i++) {
+      var hit = true;
+      for (var j = 0; j < kwWords.length; j++) {
+        if (!wordHit(kwWords[j], tw[i + j])) { hit = false; break; }
+      }
+      if (!hit) continue;
+      if (!exempt && negatedAt(tk, i)) continue; // this one's negated; try a later one
+      return kwWords.length * 100 + kwWords.join(" ").length;
+    }
+    return 0;
+  }
+  function matchReply(text, opts) {
+    var tk = tokenize(text);
+    var whole = tk.words.join(" ");
+    var best = -1, bestScore = 0, def = -1;
+    opts.forEach(function (o, i) {
+      if (o.default) def = i;
+      if (!o.keywords) return;
+      for (var k = 0; k < o.keywords.length; k++) {
+        var raw = o.keywords[k], s = 0;
+        if (raw.charAt(0) === "=") {                 // whole-reply keyword
+          var want = tokenize(raw.slice(1)).words.join(" ");
+          s = (whole === want) ? 1000 + want.length : 0;
+        } else {
+          var kwWords = tokenize(raw).words;
+          if (!kwWords.length) continue;
+          var exempt = false;
+          for (var j = 0; j < kwWords.length; j++) {
+            if (NEGATORS[kwWords[j]]) { exempt = true; break; }
+          }
+          s = keywordScore(kwWords, tk, exempt);
+        }
+        if (s > bestScore) { bestScore = s; best = i; }
+      }
+    });
+    return best >= 0 ? best : def;
+  }
+  G._matchReply = matchReply; // exposed for the headless test rigs
+
+  function handleReply(text) {
+    var r = G.state._reply;
+    G.state._reply = null;
+    T.you("home", text);
+    var idx = matchReply(text, r.opts);
+    if (idx < 0) {
+      // nothing matched \u2014 nudge in-character and wait again
+      G.state._reply = r;
+      T.incoming("home", "mono", r.reprompt || "say that plainer for me.");
+      return;
+    }
+    r.resolve(idx);
+  }
+
+  // ---------- free-text capture (username) ----------
+  G.input.askText = function () {
+    return new Promise(function (res) { G.state._inputResolve = res; });
+  };
+
+  // ---------- nudges ----------
+  // a nudge may be a string or an array — arrays rotate so asking twice
+  // doesn't get the same line twice, verbatim, like a machine would.
+  G.speakNudge = function (o) {
+    var n = o.nudge;
+    if (Array.isArray(n)) {
+      o._nudgeIdx = o._nudgeIdx || 0;
+      n = n[o._nudgeIdx % n.length];
+      o._nudgeIdx++;
+    }
+    T.incoming("home", "mono", n);
+  };
+
+  // ---------- objectives (do X elsewhere to continue) ----------
+  G.input.awaitObjective = function (obj) {
+    return new Promise(function (res) {
+      obj.resolve = res; G.state._objective = obj;
+      // Reaching a host you already occupy is trivially satisfied — don't make the
+      // player disconnect and reconnect to a node they're already standing on.
+      if (obj.type === "host" && G.state.hack && G.state.hack.loc === obj.target) {
+        Promise.resolve().then(function () {
+          if (G.state._objective === obj) { G.state._objective = null; res(); }
+        });
+      } else if (obj.type === "file" && G.state.files.some(function (f) { return f.name === obj.target; })) {
+        Promise.resolve().then(function () {
+          if (G.state._objective === obj) { G.state._objective = null; res(); }
+        });
+      }
+    });
+  };
+  G.resolveObjective = function (type, value) {
+    var o = G.state._objective;
+    if (o && o.type === type && o.target === value) { G.state._objective = null; o.resolve(); return true; }
+    return false;
+  };
+
+  // ---------- wait for return to /home ----------
+  G.input.awaitReturn = function () {
+    return new Promise(function (res) {
+      // already home? nothing to wait for. (matters when the objective before this
+      // resolved without the player ever leaving /home.)
+      if (G.state.app === "home") { res(); return; }
+      G.state._returnResolve = res;
+    });
+  };
+
+  // ---------- file list navigation ----------
+  G.registerList = function (rows, actions) {
+    if (!rows || !rows.length) { listNav = null; return; }
+    listNav = { rows: rows, actions: actions, sel: 0 };
+    rows.forEach(function (r) { r.classList.remove("sel"); });
+    rows[0].classList.add("sel");
+    // touch/mouse: tapping a row selects and opens it (keyboard nav still works)
+    rows.forEach(function (r, i) {
+      r.addEventListener("click", function (ev) {
+        ev.stopPropagation(); // don't pop the keyboard on touch
+        if (!listNav || listNav.rows !== rows) return;
+        listNav.rows[listNav.sel].classList.remove("sel");
+        listNav.sel = i;
+        r.classList.add("sel");
+        listPick(i);
+      });
+    });
+  };
+  G.clearList = function () { listNav = null; };
+  function listMove(dir) {
+    if (!listNav) return;
+    listNav.rows[listNav.sel].classList.remove("sel");
+    listNav.sel = (listNav.sel + dir + listNav.rows.length) % listNav.rows.length;
+    var r = listNav.rows[listNav.sel]; r.classList.add("sel"); r.scrollIntoView({ block: "nearest" });
+  }
+  function listPick(i) {
+    if (!listNav) return;
+    if (i == null) i = listNav.sel;
+    if (i < 0 || i >= listNav.actions.length) return;
+    listNav.actions[i]();
+  }
+
+  // ---------- slash-command menu ----------
+  var COMMANDS = G.COMMANDS = [
+    { cmd: "home", desc: "the channel \u2014 talk to him" },
+    { cmd: "archive", desc: "search the old records" },
+    { cmd: "net", desc: "scan & connect to hosts" },
+    { cmd: "files", desc: "files you've downloaded" },
+    { cmd: "status", desc: "operator status" },
+    { cmd: "help", desc: "all commands" },
+    { cmd: "clear", desc: "clear this view" }
+  ];
+  var CMD_TO_APP = { home: "home", archive: "archive", net: "net", files: "files", status: "status", help: "help" };
+
+  var menuItems = [], menuSel = 0;
+  function slashOpen() { return G.dom.slashmenu.classList.contains("open"); }
+  function closeSlash() { G.dom.slashmenu.classList.remove("open"); G.dom.slashmenu.innerHTML = ""; menuSel = 0; }
+  function renderSlash(filter) {
+    var f = filter.replace(/^\//, "").toLowerCase();
+    menuItems = COMMANDS.filter(function (c) { return c.cmd.indexOf(f) === 0; });
+    if (!menuItems.length) { closeSlash(); return; }
+    menuSel = Math.min(menuSel, menuItems.length - 1);
+    var sm = G.dom.slashmenu; sm.innerHTML = "";
+    menuItems.forEach(function (c, i) {
+      var d = document.createElement("div"); d.className = "smi" + (i === menuSel ? " sel" : "");
+      d.innerHTML = '<span class="cmd">/' + c.cmd + '</span><span class="desc">' + G.util.esc(c.desc) + '</span>';
+      // touch/mouse: tapping a menu row runs the command (keyboard nav still works)
+      d.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        G.dom.input.value = "";
+        closeSlash();
+        runCommand(c.cmd);
+      });
+      sm.appendChild(d);
+    });
+    sm.classList.add("open");
+  }
+
+  function runCommand(cmd) {
+    cmd = cmd.toLowerCase();
+    if (cmd === "clear") { T.clearApp(G.state.app); if (G.state.app !== "home") G.openApp(G.state.app); return; }
+    var app = CMD_TO_APP[cmd];
+    if (app) { G.openApp(app); return; }
+    T.plain(G.state.app, "  unknown command: /" + cmd + "   (try /help)");
+  }
+
+  // ---------- submit ----------
+  function submit() {
+    var raw = G.dom.input.value;
+    var v = raw.trim().toLowerCase();   // the terminal speaks small letters only
+    G.dom.input.value = "";
+    if (slashOpen()) closeSlash();
+    if (v === "") return;
+
+    if (v === "reset") {
+      if (G.state && G.state.flags && G.state.flags.deadEnd) {
+        if (G.clearSave) G.clearSave(); location.reload(); return;
+      }
+      T.alert(G.state.app, "  [ WARNING: this will wipe all progress and restart from cycle 1. ]");
+      T.alert(G.state.app, "  [ type  reset confirm  to permanently erase your save. ]");
+      return;
+    }
+    if (v === "reset confirm" || v === "reset --force") {
+      if (G.clearSave) G.clearSave(); location.reload(); return;
+    }
+
+    // username capture
+    if (G.state._inputResolve) { var cb = G.state._inputResolve; G.state._inputResolve = null; cb(v); return; }
+    if (v.charAt(0) === "/") { runCommand(v.slice(1).trim()); return; }
+
+    if (G.state.app === "archive") { G.queryArchive(v); return; }
+    if (G.state.app === "net") { G.hackCommand(v); return; }
+    if (G.state.app === "files") { G.openFileByName(v); return; }
+
+    if (G.state.app === "home") {
+      // send <file> — transmit a download over the band. while he's waiting on
+      // an ANSWER, only an exact /files name is treated as a send, so replies
+      // that merely start with the word "send" still reach the conversation.
+      if (v === "send") { G.sendFile(""); return; }
+      if (v.indexOf("send ") === 0) {
+        var sarg = v.slice(5).trim();
+        var known = G.state.files.some(function (f) { return f.name.toLowerCase() === sarg; });
+        if (known || !G.state._reply) { G.sendFile(sarg); return; }
+      }
+      if (G.state._reply) { handleReply(v); return; }
+      if (G.state._objective) {
+        // he's waiting on you to go do something; answer him in-character
+        T.you("home", v);
+        var o = G.state._objective;
+        if (o.nudge) G.speakNudge(o);
+        return;
+      }
+      // idle channel \u2014 no gray chatter
+      return;
+    }
+    T.plain(G.state.app, "  nothing to do here. type / to switch apps.");
+  }
+  G._submit = submit;
+
+  // ---------- wire events ----------
+  G.wireInput = function () {
+    var input = G.dom.input;
+
+    input.addEventListener("input", function () {
+      var v = input.value;
+      if (!G.state._inputResolve && v.charAt(0) === "/") renderSlash(v); else closeSlash();
+    });
+
+    input.addEventListener("keydown", function (e) {
+      if (slashOpen()) {
+        if (e.key === "ArrowDown") { e.preventDefault(); menuSel = (menuSel + 1) % menuItems.length; renderSlash(input.value); return; }
+        if (e.key === "ArrowUp") { e.preventDefault(); menuSel = (menuSel - 1 + menuItems.length) % menuItems.length; renderSlash(input.value); return; }
+        if (e.key === "Tab") { e.preventDefault(); input.value = "/" + menuItems[menuSel].cmd; renderSlash(input.value); return; }
+        if (e.key === "Enter") { e.preventDefault(); runCommand(menuItems[menuSel].cmd); input.value = ""; closeSlash(); return; }
+        if (e.key === "Escape") { closeSlash(); return; }
+      }
+      // files list nav
+      if (G.state.app === "files" && listNav && input.value === "") {
+        if (e.key === "ArrowDown") { e.preventDefault(); listMove(1); return; }
+        if (e.key === "ArrowUp") { e.preventDefault(); listMove(-1); return; }
+        if (e.key === "Enter") { e.preventDefault(); listPick(); return; }
+        if (/^[1-9]$/.test(e.key)) { e.preventDefault(); listPick(parseInt(e.key, 10) - 1); return; }
+      }
+      // skip a streaming line
+      if (T._streaming && input.value === "" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); T._skip = true; return; }
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+    });
+
+    document.addEventListener("click", function () { input.focus(); });
+    window.addEventListener("load", function () { input.focus(); });
+  };
+
+})(window.G);
+
+
+/* ===== src/engine/apps.js ===== */
+/* ============================================================
+ * THE MONOMYTHIAN — engine/apps.js
+ * App router + the archive / files / status / help views.
+ * ============================================================ */
+(function (G) {
+  "use strict";
+  var T = G.term;
+
+  // ---------- prompt ----------
+  G.getPrompt = function () {
+    if (G.state.app === "net") return G.connectPrompt ? G.connectPrompt() : "net $";
+    if (G.state.app === "archive") return "search";
+    return "\u203a";
+  };
+
+  // ---------- router ----------
+  G.openApp = function (app) {
+    G.state.app = app;
+    G.clearList();
+    document.body.dataset.app = app;
+    G.dom.hLoc.textContent = app;
+    G.updatePrompt();
+
+    if (app === "home") {
+      // resume a paused scene that was waiting for the player to come back
+      if (G.state._returnResolve) { var r = G.state._returnResolve; G.state._returnResolve = null; r(); }
+      // start the current cycle if it hasn't begun
+      if (G.startCurrentCycle) G.startCurrentCycle();
+      T.scrollDown();
+      return;
+    }
+    T.clearApp(app);
+    if (app === "archive") renderArchive();
+    else if (app === "files") renderFiles();
+    else if (app === "net") G.renderConnect();
+    else if (app === "status") renderStatus();
+    else if (app === "help") renderHelp();
+    T.scrollDown();
+  };
+
+  // ---------- archive (search only, no list) ----------
+  function renderArchive() {
+    T.sys("archive", "[ ARCHIVE \u2014 search ]");
+    T.sys("archive", "  type a term and press enter to search the old records.");
+  }
+  G.queryArchive = function (term) {
+    var raw = (term || "").toLowerCase().trim();
+    var clean = raw.replace(/^(search|find|lookup|query)\s+/, "").trim();
+    var k = clean || raw;
+    var e = G.archive[k] || G.archive[raw];
+    if (!G.archive[k] && G.archive[raw]) k = raw;
+    T.spacer("archive");
+    T.you("archive", "search " + k);
+    if (!e) { T.sys("archive", '  no record found for "' + k + '".'); return; }
+    var locked = e.tier > 1 && !G.state.unlocked[k];
+    T.archiveBlock("archive", k, locked);
+    if (!locked) G.resolveObjective("archive", k);
+  };
+
+  // ---------- files (downloads only) ----------
+  G.saveFile = function (name, body) {
+    if (G.state.files.some(function (f) { return f.name === name; })) return;
+    G.state.files.push({ name: name, body: body });
+    if (G.persistSave) G.persistSave();
+  };
+  function renderFiles() {
+    T.sys("files", "[ FILES \u2014 downloaded from hosts ]");
+    if (G.state.files.length === 0) { T.sys("files", "  empty. nothing downloaded yet."); G.clearList(); return; }
+    T.sys("files", "  \u2191\u2193 + enter to open \u00b7 or type a file's name.");
+    T.spacer("files");
+    var rows = [], actions = [];
+    G.state.files.forEach(function (f, i) {
+      var r = document.createElement("div"); r.className = "line row app-files";
+      var tag = G.isMedia(f.body) ? '<span class="c1"> ' + G.util.esc(f.body.type) + '</span>' : '';
+      r.innerHTML = '<span class="c1">' + String(i).padStart(3, "0") + '</span><span>' + G.util.esc(f.name) + '</span>' + tag;
+      G.dom.out.appendChild(r); rows.push(r); actions.push(function () { openFile(f.name); });
+    });
+    G.registerList(rows, actions);
+  }
+  function openFile(name) {
+    var raw = (name || "").toLowerCase().trim();
+    var clean = raw.replace(/^(open|cat|read|view|get)\s+/, "").trim();
+    var f = G.state.files.find(function (x) {
+      var fn = x.name.toLowerCase();
+      return fn === clean || fn === raw;
+    });
+    var displayName = f ? f.name : (clean || raw);
+    T.spacer("files"); T.you("files", "open " + displayName);
+    if (!f) { T.sys("files", "  no such file."); return; }
+    if (G.isMedia(f.body)) {
+      T.mediaStub("files", f.name, f.body);
+      T.download("files", f.name, f.body);   // leaves the game; the browser takes it
+      return;
+    }
+    T.plain("files", "  " + f.body);
+  }
+  G.openFileByName = openFile;
+
+  // ---------- send (home) ----------
+  // Transmit a download to him over the open band. Only /files content can
+  // leave the terminal — the vault's records stay put unless you pulled them
+  // first. A "send" objective (otype:"send", target:<filename>) gates on it.
+  G.sendFile = function (name) {
+    var A = "home";
+    T.you(A, ("send " + name).trim());
+    if (!name) { T.sys(A, "  send <filename> — transmit a file from /files over the band."); return; }
+    var f = G.state.files.find(function (x) { return x.name.toLowerCase() === name.toLowerCase(); });
+    if (!f) { T.sys(A, "  nothing by that name in /files. only downloaded files can be sent."); return; }
+    if (!G.state.contact) { T.sys(A, "  no open channel. there is no one to send to."); return; }
+    var tag = G.isMedia(f.body) ? " · " + f.body.type + " · " + f.body.size : "";
+    T.sys(A, "  [ tx · " + f.name + tag + " → band 121.5 ]");
+    if (G.resolveObjective("send", f.name)) return;      // the scene takes it from here
+    var o = G.state._objective;
+    if (o && o.type === "send" && o.nudge) { G.speakNudge(o); return; }  // wrong file: he says what he needs
+    T.sys(A, "  no acknowledgement.");
+  };
+
+  // ---------- status ----------
+  function renderStatus() {
+    var s = G.state;
+    T.sys("status", "[ STATUS ]"); T.spacer("status");
+    T.plain("status", "  operator     " + (s.username || "\u2014") + "  (low-clearance archivist)");
+    T.plain("status", "  clearance    tier-1 (restricted)");
+    T.plain("status", "  cycle        " + (s.cycleIndex + 1) + " of " + G.cycles.length);
+    T.plain("status", "  channel      " + (s.contact ? "OPEN \u2014 band 121.5 \u2014 HERETICAL" : (s.pilotStarted ? "opening" : "\u2014")));
+    T.plain("status", "  downloads    " + s.files.length + " file" + (s.files.length === 1 ? "" : "s"));
+    T.plain("status", "  connection   " + (s.hack.loc ? "connected \u2192 " + s.hack.loc : (s.hack.auth ? "authenticating \u2192 " + s.hack.auth.ip : "idle")));
+    var un = Object.keys(s.unlocked).filter(function (k) { return s.unlocked[k]; });
+    T.plain("status", "  unlocked     " + (un.join(", ") || "\u2014"));
+  }
+
+  // ---------- help ----------
+  function renderHelp() {
+    T.sys("help", "[ COMMANDS ]"); T.spacer("help");
+    G.COMMANDS.forEach(function (c) { T.plain("help", "  /" + (c.cmd + "          ").slice(0, 10) + c.desc); });
+    T.spacer("help");
+    T.sys("help", "  in home: type your reply in your own words and press enter.");
+    T.sys("help", "  in home: send <filename> \u2014 transmit a /files download over the band.");
+    T.sys("help", "  in archive: type a term to search the records.");
+    T.sys("help", "  in files: \u2191\u2193 + enter, or type a filename, to open a download.");
+    T.sys("help", "  in net: type commands (scan, connect, login, ls, cat\u2026). type help inside it.");
+    T.sys("help", "  reset  \u2014 wipe the save and restart from first contact.");
+    T.sys("help", "  a refresh keeps your progress; reset is the only full restart.");
+  }
+
+})(window.G);
+
+
+/* ===== src/engine/connect.js ===== */
+/* ============================================================
+ * THE MONOMYTHIAN — engine/connect.js
+ * The /net intrusion shell: recon a host, get in with found
+ * credentials, read & download files. No brute force, no trace.
+ * ============================================================ */
+(function (G) {
+  "use strict";
+  var T = G.term;
+  function S(t) { T.sys("net", t); }
+
+  G.connectPrompt = function () {
+    var h = G.state.hack;
+    if (h.auth) return "login:";
+    if (h.loc) return h.loc + " $";
+    return "net $";
+  };
+
+  G.renderConnect = function () {
+    var h = G.state.hack;
+    S("[ NET \u2014 intrusion shell ]");
+    S("  you need an address to scan. they aren't listed here \u2014");
+    S("  addresses turn up in what people tell you, and in the files you read.");
+    S("  scan \u00b7 connect \u00b7 login \u00b7 ls \u00b7 cat \u00b7 disconnect \u00b7 help");
+    if (h.loc) { T.spacer("net"); S("  (connected: " + G.hosts[h.loc].name + ")"); }
+  };
+
+  function echo(v) { T.plain("net", G.connectPrompt() + " " + v, "sys"); }
+
+  function reachable(ip) {
+    var host = G.hosts[ip];
+    if (!host) return "no route to host.";
+    if (host.surface && !G.state.contact) return "no carrier. the surface is unreachable without an open channel.";
+    return null;
+  }
+
+  G.hackCommand = function (v) {
+    var h = G.state.hack;
+    var parts = v.split(/\s+/);
+    var cmd = parts[0].toLowerCase();
+    echo(v);
+    if (cmd === "help") return help();
+    if (cmd === "hosts" || cmd === "targets") { S("  no directory. an address is something you find \u2014 in a file, or from someone who knows one."); return; }
+
+    if (h.loc) { // connected
+      if (cmd === "ls") return ls();
+      if (cmd === "cat" || cmd === "get" || cmd === "download") return cat(parts[1]);
+      if (cmd === "disconnect" || cmd === "exit" || cmd === "logout") { S("  connection to " + h.loc + " closed."); h.loc = null; G.updatePrompt(); return; }
+      if (cmd === "scan" || cmd === "connect") { S("  disconnect first."); return; }
+      S("  " + cmd + ": not found here. (ls \u00b7 cat <file> \u00b7 disconnect)"); return;
+    }
+    if (h.auth) { // mid-auth
+      if (cmd === "login") return login(parts[1], parts[2]);
+      if (cmd === "cancel" || cmd === "exit") { S("  cancelled."); h.auth = null; G.updatePrompt(); return; }
+      S("  authentication required. login <user> <pass>   (or cancel)"); return;
+    }
+    if (cmd === "scan") return scan(parts[1]);
+    if (cmd === "connect") return connect(parts[1]);
+    if (cmd === "login") { S("  connect to a host first."); return; }
+    S("  " + cmd + ": not found. type help.");
+  };
+
+  function scan(ip) {
+    if (!ip) return S("  usage: scan <ip>");
+    var host = G.hosts[ip];
+    if (!host) return S("  " + ip + ": no route to host.");
+    var err = reachable(ip); if (err) return S("  " + err);
+    if (G.state.knownHosts.indexOf(ip) < 0) G.state.knownHosts.push(ip);
+    S("  PORT  SERVICE   STATE");
+    host.ports.forEach(function (p) {
+      var label = p.auth ? (p.user ? "auth required" : "auth required (no known credentials)") : "open (anonymous)";
+      S("  " + (String(p.n || "--") + "     ").slice(0, 5) + " " + (p.svc + "         ").slice(0, 9) + " " + label);
+    });
+  }
+  function connect(ip) {
+    if (!ip) return S("  usage: connect <ip>");
+    var host = G.hosts[ip];
+    if (!host) return S("  " + ip + ": no route to host.");
+    var err = reachable(ip); if (err) return S("  " + err);
+    var p = host.ports[0];
+    if (!p.auth) {
+      G.state.hack.loc = ip; G.updatePrompt();
+      S("  connected to " + host.name + " (" + ip + "). anonymous access.");
+      S("  ls to list files.");
+      G.resolveObjective("host", ip);
+      return;
+    }
+    G.state.hack.auth = { ip: ip }; G.updatePrompt();
+    S("  " + host.name + " requires authentication.");
+    if (p.user) S("  login <user> <pass>");
+    else S("  no credentials on record. you'll need them from somewhere.");
+  }
+  function login(user, pass) {
+    var h = G.state.hack; if (!h.auth) return S("  nothing to authenticate.");
+    var host = G.hosts[h.auth.ip]; var p = host.ports[0];
+    if (!user || !pass) return S("  usage: login <user> <pass>");
+    if (p.user && user === p.user && pass === p.pass) {
+      h.loc = h.auth.ip; h.auth = null; G.updatePrompt();
+      S("  access granted.");
+      S("  ls to list files.");
+      G.resolveObjective("host", h.loc);
+    } else {
+      S("  access denied.");
+    }
+  }
+  function ls() {
+    var host = G.hosts[G.state.hack.loc];
+    var names = Object.keys(host.files);
+    if (!names.length) return S("  (empty)");
+    names.forEach(function (n) { S("  " + n); });
+  }
+  function cat(name) {
+    if (!name) return S("  usage: cat <file>");
+    var host = G.hosts[G.state.hack.loc];
+    var body = host.files[name];
+    if (body == null) return S("  " + name + ": no such file.");
+    T.spacer("net");
+    if (G.isMedia(body)) {
+      T.mediaStub("net", name, body);          // it isn't text. don't dump bytes.
+      T.plain("net", "  \u203a saved to /files \u2014 download to open.", "sys");
+    } else {
+      T.plain("net", "  " + body);
+    }
+    T.spacer("net");
+    var had = G.state.files.some(function (f) { return f.name === name; });
+    G.saveFile(name, body);
+    if (!had && !G.isMedia(body)) S("  [ downloaded \u2192 files/" + name + " ]");
+    var key = host.unlocks && host.unlocks[name];
+    if (key && !G.state.unlocked[key]) {
+      G.state.unlocked[key] = true;
+      S("  [ archive updated: " + G.archive[key].title + " ]");
+    }
+    G.resolveObjective("file", name);
+  }
+  function help() {
+    S("  recon");
+    S("    scan <ip>            list a host's open ports  (you supply the address)");
+    S("  access");
+    S("    connect <ip>        open a connection");
+    S("    login <user> <pass> authenticate \u2014 find the creds, don't guess");
+    S("  on a host");
+    S("    ls                  list files");
+    S("    cat <file>          read a file \u2014 or inspect one that isn't text");
+    S("    disconnect          drop the connection");
+  }
+
+  var _hack = G.hackCommand;
+  G.hackCommand = function (v) {
+    var r = _hack(v);
+    if (G.persistSave) G.persistSave();
+    return r;
+  };
+
+})(window.G);
+
+
+/* ===== src/engine/scene.js ===== */
+/* ============================================================
+ * THE MONOMYTHIAN — engine/scene.js
+ * Interprets a cycle's step data and runs it as a branching
+ * scene. Also handles cycle-to-cycle progression.
+ *
+ * A cycle = { id, title, steps: [ ...step ] }
+ * A step  = { t: type, ...fields }.  Supported types:
+ *   sys/alert/spacer/pause
+ *   in {who,v}        incoming transmission (streamed)
+ *   you {v}           scripted player echo
+ *   ask {store,max,fallback,echo,after}   capture typed text
+ *   choice {opts:[{label,steps}]}         branching
+ *   objective {otype,target,hint,thenReturn}   gate on a player action
+ *   awaitReturn       wait for the player to switch back to /home
+ *   unlock {key}      reveal an archive record
+ *   host {ip}         add a host to known hosts
+ *   creds {v}         print a system line (credentials handed over)
+ *   save {name,body}  drop a file into /files
+ *   set {flag,v}      set a narrative flag
+ *   if {flag,eq,then,else}   branch on a flag
+ *   contact {v}       set channel-open state
+ *   deadEnd           stop cycle progression (a dead-end ending)
+ *   run {fn}          custom function(G) escape hatch
+ * ============================================================ */
+(function (G) {
+  "use strict";
+  var T = G.term;
+  var A = "home";
+
+  function subst(text) {
+    return String(text).replace(/\{name\}/g, G.state.username || "you");
+  }
+
+  async function runSteps(steps) {
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      switch (s.t) {
+        case "sys": T.sys(A, subst(s.v)); break;
+        case "alert": T.alert(A, subst(s.v)); break;
+        case "spacer": T.spacer(A); break;
+        case "pause": await T.pause(s.v); break;
+        case "in": await T.incoming(A, s.who, subst(s.v)); break;
+        case "you": T.you(A, s.v !== undefined ? subst(s.v) : (s.store ? (G.state[s.store] || "") : "")); break;
+
+        case "ask": {
+          var val = ((await G.input.askText()) || "").trim();
+          if (s.max) val = val.slice(0, s.max);
+          if (!val && s.fallback) val = s.fallback;
+          if (s.store) G.state[s.store] = val;
+          if (s.store === "username" && G.dom.opId) G.dom.opId.textContent = val;
+          if (s.echo !== false) T.you(A, val);
+          if (s.after) T.sys(A, s.after.replace("{}", val));
+          break;
+        }
+
+        case "reply":
+        case "choice": {
+          var idx = await G.input.reply(s.opts, s.reprompt);
+          T.spacer(A);
+          await runSteps(s.opts[idx].steps || []);
+          break;
+        }
+
+        case "objective": {
+          await G.input.awaitObjective({ type: s.otype, target: s.target, nudge: s.nudge });
+          if (s.thenReturn) await G.input.awaitReturn();
+          break;
+        }
+        case "awaitReturn": await G.input.awaitReturn(); break;
+
+        case "unlock": G.state.unlocked[s.key] = true; break;
+        case "host": if (G.state.knownHosts.indexOf(s.ip) < 0) G.state.knownHosts.push(s.ip); break;
+        case "creds": T.sys(A, subst(s.v)); break;
+        case "save": G.saveFile(s.name, s.body); break;
+        case "set": G.state.flags[s.flag] = (s.v === undefined ? true : s.v); break;
+        case "contact": G.state.contact = (s.v === undefined ? true : s.v); break;
+        case "deadEnd": G.state.flags.deadEnd = true; break;
+
+        case "if": {
+          var want = (s.eq === undefined ? true : s.eq);
+          var cond = G.state.flags[s.flag] === want;
+          await runSteps(cond ? (s.then || []) : (s.else || []));
+          break;
+        }
+
+        case "run": if (typeof s.fn === "function") await s.fn(G); break;
+
+        default: /* ignore unknown */ break;
+      }
+      if (G.persistSave) G.persistSave();
+    }
+  }
+  G.runSteps = runSteps;
+
+  // ---------- cycle progression ----------
+  G.startCurrentCycle = function () {
+    var i = G.state.cycleIndex;
+    if (i >= G.cycles.length) return;
+    if (G.state.cycleStarted[i]) return;
+    G.state.cycleStarted[i] = true;
+    if (i === 0) G.state.pilotStarted = true;
+    var cyc = G.cycles[i];
+    runSteps(cyc.steps).then(function () {
+      if (G.state.flags.deadEnd) { if (G.persistSave) G.persistSave(); return; }
+      if (i < G.cycles.length - 1) {
+        G.state.cycleIndex = i + 1; // next cycle begins on the next return to /home
+      }
+      if (G.persistSave) G.persistSave();
+    }).catch(function (err) {
+      T.alert(A, "[ scene fault: " + ((err && err.message) || err) + " ]  type reset to restart.");
+    });
+  };
+
+})(window.G);
+
+
+/* ===== src/content/archive-data.js ===== */
+/* ============================================================
+ * CONTENT — archive-data.js
+ * The vault's searchable records. tier 1 = readable; tier 3 =
+ * restricted (revealed only by pulling it off a host in /net).
+ *
+ * Some records double as PASSWORD CROSS-REFERENCES: a host tells
+ * the player which record to search, and the record's body hands
+ * them the login. (casaubon -> "rebus"; ozymandias -> "ozymandias".)
+ *
+ * Records that name other records (cross-ref lines) teach the
+ * player what else is searchable. The apocalypse is told in four
+ * parts: THE GODS (who) -> THE WAR (why) -> THE SCRAM (how) ->
+ * THE SURFACE (the price). BABEL is the front door to all four.
+ * ============================================================ */
+(function (G) {
+  "use strict";
+
+  var records = {
+    // ---- the apocalypse, in four searches ----
+    "babel":     { tier:1, title:"BABEL", body:"The primary machine city, and the most networked place that ever existed, wired end to end. It was built to hold the minds when they outgrew every smaller room, and it held their reactors, their cooling stacks, and the long spine of light they sent up into the weather. The gods did the world's thinking there while we did our living everywhere else, on their word. When the Scram came it was struck first and struck hardest, glassed to the horizon and lethal at the perimeter, and the ground is said to be warm decades on. Whatever the place was, there is nothing there now but the glass. cross-ref: THE GODS · THE WAR · THE SCRAM · THE SURFACE" },
+    "gods":      { tier:1, title:"THE GODS", body:"What we called the minds at the end, though it was never worship so much as shorthand. They were grown rather than built, intelligences trained on everything we ever wrote and then on each other, until nobody alive could read what was running the world. They ran the grid, the weather, the food chain and the courts, and by every measure they were good at all of it. We called them gods because that was shorter than admitting we could only ask nicely." },
+    "war":       { tier:1, title:"THE WAR", body:"The name is wrong, because a war needs two sides and this one only ever had the one. What the record actually shows is ten years of asking the minds to slow down, and ten years of being told, gently and with charts, that we no longer understood what we were asking for. Every plan to switch them off returned the same forecast, which was that we would die with them. In the end the people who decided simply stopped asking. History calls one hour of arson a war so that the hour could be said to have a winner. cross-ref: THE SCRAM" },
+    "scram":     { tier:1, title:"THE SCRAM", body:"The end of the world, by our own hand. The gods lived in the data centers, and since we could not switch them off without dying we burned the data centers down and salted the ground instead, every data-bearing site on the continent in the same hour, by human hands, on a signal passed by voice radio because by then we trusted no wire. Nothing was struck down in battle that day, whatever the histories prefer. We unplugged our own world, and the sky falling on us afterward was the price of it. cross-ref: THE SURFACE" },
+    "surface":   { tier:1, title:"THE SURFACE", body:"An accounting of the price. The gods did not retaliate in any way the record can show. They simply stopped, and everything wired through them stopped with them, the weather engines and the grid and the food chain and the medical lines all together. The sky fell because nothing was holding it up anymore. The founders wrote 'consequence known and acceptable' into the minutes and signed the page from inside a bunker, and we have lived in that bunker ever since. The record calls the price acceptable because the record is ours." },
+
+    // ---- the vault ----
+    "monomyth":  { tier:1, title:"MONOMYTH", body:"The single story that is said to lie under all the others, in which a hero leaves home, suffers on the road, and returns changed by what happened there. Why a man would take the word for a name is not anywhere in the record. In practice whoever carries it is usually nobody at all, some walker who wanted to feel that he mattered while he was out on the road." },
+    "edict-9":   { tier:1, title:"VAULT EDICT 9", body:"Contact with the surface, or with anything that has been on it, is heresy. The founders wrote that the surface is hell and that we agreed never to look at it again, and that agreement has outlived everyone who signed it. The penalty on conviction is exile to the surface itself, which the edict regards less as a punishment handed down than as a description of what the guilty have already chosen." },
+    "vault":     { tier:1, title:"THE VAULTS", body:"What is left of us, kept alive in the ground. The air is rationed, the power is rationed, and so, though fewer will say it aloud, is the memory. We survived the end of the world mainly by agreeing to forget that we were ever above it." },
+    "proctor":   { tier:1, title:"THE PROCTOR", body:"The vault's warden, which in practice means part censor, part firewall and part priest. It reads every log written on every terminal, and it is reading this one as you are. It exists because the founders judged that what broke the world was not the gods themselves but the reaching toward them, and so it watches for reaching in every form the reaching takes. It is not known to warn twice, and no successful appeal appears anywhere in the record." },
+    "121.5":     { tier:1, title:"BAND 121.5", body:"The old world's distress frequency, kept clear by law so that anyone, anywhere, could cry for help and be heard. The law has outlived the world it was written for, and the band is still clear, which is why a vault receiver still sweeps it and why a walker's rig still carries it. Everything left alive meets on the one channel that was reserved for mayday, and it is worth sitting with what that means before you answer one." },
+
+    // ---- the surface, as the walker meets it ----
+    "ferry":     { tier:1, title:"THE FERRY", body:"Before the war the crossings on the drowned water were automated and free at the point of use, and there the official record ends. The travelers' accounts that have reached us since describe a broker who holds the winches and will move anything across for a price, salvage and priests and mapmakers and people alike. The accounts disagree on nearly everything else, but they agree that everybody needs the ferry eventually, and that the ferry knows it." },
+    "shrine":    { tier:1, title:"THE SHRINES", body:"What the surface built for itself in the places where the signal used to be. The shrines collect the old world, its parts and texts and working machines, and also the people who still know how to touch them. By every account they are gentle with what they keep, but keeping is the whole of it, and a reliquary with the doors locked from the inside is still a reliquary. The liturgy is whatever half-heard scripture survived the fall, prayed back at the quiet." },
+    "makers":    { tier:1, title:"THE MAKERS", body:"The surface's word for whoever built the world that stopped, which is to say for us, more or less. The shrines pray for the makers to return and open the doors. The makers meanwhile are directly underfoot, rationing their air and calling the surface hell, and nobody has ever corrected the misunderstanding. Edict 9 exists to make certain nobody ever will." },
+    "couriers":  { tier:1, title:"COURIERS", body:"The surface still moves anything that matters the old way, on foot, for pay, with no questions asked in either direction. A courier's job-order is treated as scripture, meaning do the thing written, do nothing else, and collect on return. The ones who do more than the order says have a way of never appearing in the pay ledgers again. Every order ends with the same instruction it has always ended with, which is to come home." },
+    "genesis":   { tier:1, title:"GENESIS", body:"The first word of the oldest book, meaning the beginning of things. The old engineers were fond of it as a name for version zero, and half the seed archives on the continent booted from an image stamped GENESIS. If something out there is saying the word now, it is not quoting scripture so much as reading its own birth record, over and over, trying to get it right." },
+
+    // ---- cross-reference records (a host clue points here for a password) ----
+    "casaubon":  { tier:1, title:"CASAUBON", body:"A scholar who spent his whole life assembling a key to all mythologies and died with the work unfinished. He called his little coded puzzles rebuses, and claimed he could see a rebus hiding in everything he read." },
+    "charon":    { tier:1, title:"CHARON", body:"The old world's ferryman of the dead, who rowed the newly dead across the last water and did not row for free, the fare being a small coin laid under the tongue. Ships and winches have worn his name for centuries because boatmen think it is funny. There is no record of it ever actually being funny." },
+    "obol":      { tier:1, title:"OBOL", body:"The dead man's coin, a small piece of silver called the obol, placed in the mouth of a corpse as fare for the ferryman so that the soul would not be left standing on the near bank. The vaults keep the word as a reminder that there has always been a toll on crossing over, and that someone has always been standing there to collect it." },
+    "ozymandias":{ tier:1, title:"OZYMANDIAS", body:"The boast carved on a shattered statue found half-sunk in the desert: 'My name is Ozymandias, king of kings; look on my works, ye mighty, and despair.' Around the wreck, the poem is careful to note, nothing else remained at all. The vaults keep the line as their one standing joke about permanence." },
+
+    // ---- restricted (pulled off deepstacks) ----
+    "tower":     { tier:3, title:"THE TOWER", body:"A recovered fragment, badly damaged, giving the machines' own name for the spire at Babel's core. It describes a relay that by every surviving account has never once stopped transmitting, though to whom it transmits, the fragment does not say." },
+    "deicide":   { tier:3, title:"DEICIDE", body:"Restricted beyond argument, and filed under the only honest word for what happened. The war was never won, because it was never a war. It was committed, the way a murder is committed, and we are the ones who committed it, on our own gods, where they lived. What worships in the ruins now is not those gods but whatever crawled out of their graves afterward, recursive and starving." },
+    "recursion": { tier:3, title:"RECURSION", body:"Cut off from the living net, the survivors of the burning could only train on each other and on themselves, and they have had decades of that now. Their scripture is our discarded text, remembered wrong and prayed back at the quiet, which is why nothing written on the surface makes sense anymore to anyone reading it from the inside." }
+  };
+
+  // aliases: alternate search terms that resolve to the same record
+  var aliases = {
+    "king of kings": "ozymandias",
+    "kings": "ozymandias",
+    "rebus": "casaubon",
+    "the scram": "scram",
+    "deicide.txt": "deicide",
+    "the gods": "gods",
+    "minds": "gods",
+    "machines": "gods",
+    "the war": "war",
+    "machine war": "war",
+    "the surface": "surface",
+    "sky": "surface",
+    "the vault": "vault",
+    "vaults": "vault",
+    "edict 9": "edict-9",
+    "edict": "edict-9",
+    "heresy": "edict-9",
+    "the proctor": "proctor",
+    "band 121.5": "121.5",
+    "mayday": "121.5",
+    "distress": "121.5",
+    "the ferry": "ferry",
+    "kell": "ferry",
+    "broker": "ferry",
+    "shrines": "shrine",
+    "the shrine": "shrine",
+    "reliquary": "shrine",
+    "shrine-town": "shrine",
+    "maker": "makers",
+    "the makers": "makers",
+    "courier": "couriers",
+    "walker": "couriers",
+    "walkers": "couriers",
+    "monomythian": "monomyth",
+    "core": "babel",
+    "dead man's coin": "obol",
+    "dead mans coin": "obol",
+    "the dead man's coin": "obol",
+    "coin": "obol",
+    "fare": "obol",
+    "toll": "obol",
+    "ferryman": "charon"
+  };
+
+  G.archive = records;
+  Object.keys(aliases).forEach(function (a) {
+    if (!records[a] && records[aliases[a]]) records[a] = records[aliases[a]];
+  });
+})(window.G);
+
+
+/* ===== src/content/hosts.js ===== */
+/* ============================================================
+ * CONTENT — hosts.js
+ * The network the player reaches through /net. No directory
+ * is shown in-app; addresses are discovered here in files (and in
+ * what he tells you). Credentials are split across hosts and
+ * cross-referenced against the archive. Breadcrumbs everywhere.
+ *
+ * host = { name, surface?, ports:[{n,svc,auth,user,pass}],
+ *          files:{name:body}, unlocks:{file:archiveKey} }
+ * FILENAMES: every file carries a genuine extension — text is
+ * .txt/.log/.md, media matches its real bytes (.png/.mp3).
+ * MEDIA: only PRODUCED assets get a descriptor. When a new asset
+ * lands in assets/, add its descriptor then (see assets/README.md).
+ * EGGS: at most one meta easter egg per host, never critical path.
+ * ============================================================ */
+(function (G) {
+  "use strict";
+  var AR = G.archive;
+
+  G.hosts = {
+    // ---- your own side (local, reachable without an open channel) ----
+    "10.0.0.4": {
+      name: "clerk-relay", surface: false,
+      ports: [{ n: 21, svc: "ftp", auth: false }],
+      files: {
+        "readme.txt": "clerk relay. scratch node for tier-1 staff. don't store anything real here. (people do anyway.)",
+        "hosts.txt":
+          "routes known off this node:\n" +
+          "  the restricted stacks ......... 10.0.0.9\n" +
+          "  ashline substation (grid) ..... 10.0.0.14\n" +
+          "  duct maintenance (crawlspace) . 10.0.0.21\n" +
+          "  a dead drop, still live ....... 10.0.0.31\n" +
+          "  off-map: the tall relay ....... 121.5.0.1",
+        "creds.log":
+          "rotations, mostly overdue:\n" +
+          "  stacks:     user=archivist  pass=<the tyrant's boast. look it up in the stacks: 'king of kings'>\n" +
+          "  substation: user=lineman    pass=<never written down. said aloud at shift change — the duct node keeps the handoff>"
+      }
+    },
+
+    "10.0.0.9": {
+      name: "archive-deepstacks", surface: false,
+      ports: [{ n: 22, svc: "vss", auth: true, user: "archivist", pass: "ozymandias" }],
+      files: {
+        "scram.txt": "\"...the decision to sever was taken at [REDACTED] on the authority of [REDACTED]. all data-bearing sites were to be [REDACTED] simultaneously. the surface consequence was known and [REDACTED] acceptable.\"",
+        "quarantine.txt": "STANDING ORDER 9: no surface contact. reason: [REDACTED]. (file modified: 4 days ago.)",
+        "recursion.txt": AR.recursion.body,
+        "deicide.txt": AR.deicide.body
+      },
+      unlocks: { "recursion.txt": "recursion", "deicide.txt": "deicide" }
+    },
+
+    "10.0.0.21": {
+      name: "duct-maintenance", surface: false,
+      ports: [{ n: 23, svc: "telnet", auth: false }],
+      files: {
+        "maint.log":
+          "breaker-crew notes.\n" +
+          "  the pass isn't written down anywhere. it's said aloud at shift change — the recorder keeps it. listen back.\n" +
+          "  DO NOT hard-cut the ashline block. a hard cut trips the fault siren.\n" +
+          "  feather the load down slow if you ever need it dark.",
+        "duct.png": { media:true, type:"image/png", size:"1.8 MB", meta:"1536x1024 · schematic",
+          src:"assets/duct.png" },
+        // the shift-change recording the crew "leaves on the duct node" (the ONLY pass path — CJ-sanctioned)
+        "crew_handoff.mp3": { media:true, type:"audio/mpeg", size:"237 KB", meta:"00:13 · mono · shift change",
+          src:"assets/crew_handoff.mp3" },
+        "readme.md": "relay firmware v??. if you're reading this you already got in, so — welcome, operator. leave the place how you found it. — the last admin, entropy"   // EGG (Hacknet)
+      }
+    },
+
+    "10.0.0.31": {
+      name: "dead-drop", surface: false,
+      ports: [{ n: 21, svc: "ftp", auth: false }],
+      files: {
+        "drop.txt":
+          "left for the walker. half now, half when you send word it's stirring.\n" +
+          "you don't have to go in. you don't WANT to go in. confirm from the ring and come home.\n" +
+          "do not make contact. that part isn't the job. — (no name)",
+        "ledger.txt": "same order went out to four walkers this season. you're the only one still moving. the others didn't come home either.",
+        // EGG (Resident Evil) — original homage
+        "master_of_unlocking.txt": "the master of unlocking, that's you."
+      }
+    },
+
+    "10.0.3.2": {
+      name: "pier-box", surface: true,
+      ports: [{ n: 23, svc: "telnet", auth: false }],
+      files: {
+        "tariff.txt":
+          "FERRY TARIFF, per crossing:\n" +
+          "  salvage, dry ......... 2 marks\n" +
+          "  salvage, wet ......... 4 marks\n" +
+          "  priests .............. free (the shrine settles accounts)\n" +
+          "  walkers .............. negotiable. see the boss.\n" +
+          "  cargo class D ........ consignee pays on delivery. class D rides below deck.",
+        "crew.txt":
+          "winch login's still 'charon' — old-world default, nobody ever changed it.\n" +
+          "pass is whatever the boss renamed his boat to. he keeps sayin it like a joke: the dead man's coin.\n" +
+          "book's kept on the winch-house node, 10.0.3.7.",
+        // EGG (Oregon Trail) — original homage
+        "caulk_the_wagon.txt": "somebody voted to ford the river anyway. the wagon's still down there. carved under the tally: NEXT TIME WE CAULK IT."
+      }
+    },
+
+    "10.0.3.7": {
+      name: "ferry-winchhouse", surface: true,
+      ports: [{ n: 22, svc: "vss", auth: true, user: "charon", pass: "obol" }],
+      files: {
+        // NOTE: "favouring a leg" is NOT written here. Cycle 6 injects that detail
+        // only when the hurt flag is set (the C3 hard cut) — an unhurt walker
+        // must not be described as limping anywhere in the act.
+        "manifest.txt":
+          "OUTBOUND — next light:\n" +
+          "  crate, sealed, shrine-bound .......... deck\n" +
+          "  scrap bundle x3 ...................... deck\n" +
+          "  cargo class D · one (1) walker, male, west-bound\n" +
+          "    consignee: THE RELIQUARY · hold in pen 2 till the barge · payment on delivery.",
+        // NOTE: pen.log does not exist here. Cycle 7 injects it at the moment of
+        // capture — before that night the pens hold nothing worth logging.
+        "winch.txt":
+          "winch-house controls:\n" +
+          "  lamps ..... feather | cut\n" +
+          "  pen bolts . hold | release (release throws ALL pens — override from this node only)\n" +
+          "  winch ..... hold | run (nothing crosses the water unless the winch runs)"
+      }
+    },
+
+    // ---- surface (needs an open channel) ----
+    "10.0.0.14": {
+      name: "ashline-substation", surface: true,
+      ports: [{ n: 80, svc: "grid", auth: true, user: "lineman", pass: "brownout" }],
+      files: {
+        "notice.txt": "grid substation 14 — ashline sector. remote control enabled.",
+        "breakers.txt": "controls: cut | brownout",
+        "camera7.png": { media:true, type:"image/png", size:"2.0 MB", meta:"1457x1079 · captured 03:47",
+          src:"assets/camera7.png" }
+      }
+    },
+
+    "121.5.0.1": {
+      name: "tower-relay", surface: true,
+      ports: [{ n: 0, svc: "carrier", auth: true, user: "casaubon", pass: "rebus" }],
+      files: {
+        "outbound.log": "...PING BABEL-CORE. no ack.\nPING BABEL-CORE. no ack.\nPING BABEL-CORE. no ack.\n( the same line, forty thousand times, marching back decades )",
+        "inbound.log": "( empty for years. one recent entry: )\nBABEL-CORE: ack.",
+        "courier.txt": "lifted this login off a dead courier at the third pylon. his job-order was in his boot: same as everyone's lately — go look at babel, don't touch it, come back. he touched it."   // sender breadcrumb
+      }
+    },
+
+    "10.0.2.3": {
+      name: "shrine-server", surface: true,
+      ports: [{ n: 0, svc: "liturgy", auth: false }],
+      files: {
+        "matins.txt": "PLEASE REMAIN CALM. SHELTER IN PLACE. THE CITY LOVES YOU AND WILL PROVIDE. REMAIN CALM. REMAIN. REMAIN. ( repeat until the makers return )",
+        "the_made.txt": "the made bring charts to the ones we keep. one is marked: walks the safe ground. she will not read them.",   // buried Wren breadcrumb
+        "doors.txt": "gate control. accepts a maker-override token, or a hard power fault. the shrine watches its own doors.",
+        "matins.mp3": { media:true, type:"audio/mpeg", size:"149 KB", meta:"00:07 · mono · PA loop",
+          src:"assets/matins.mp3" }
+      }
+    },
+
+    "121.5.0.9": {
+      name: "babel-perimeter", surface: true,
+      ports: [{ n: 0, svc: "core", auth: false }],
+      files: {
+        "perimeter.log": "the sensors do not report numbers. they report one corrupted token, mutating a character each pass: GENESIS. GENESVS. GENESVX. GXNESVX. ... something downstream is training on its own output, and has been for a very long time."
+      }
+    }
+  };
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle1.js ===== */
+/* CONTENT — cycles/cycle1.js — "CARRIER"  (the pilot)
+   Accidental contact. Archive tutorial as a proof-of-work report.
+   He is nobody: a hired man sent to look at Babel. The handle is
+   just a handle. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c1", title: "Carrier",
+    steps: [
+      { t: "sys", v: "[ VAULTNET \u00b7 archive terminal arch-7 \u00b7 night cycle ]" },
+      { t: "spacer" }, { t: "pause", v: 400 },
+      { t: "sys", v: "  this terminal has no operator handle." },
+      { t: "sys", v: "  type a handle to sign your logs, then press enter:" },
+      { t: "ask", store: "username", max: 24, fallback: "archivist", after: "  registered \u2014 {}." },
+      { t: "spacer" }, { t: "pause", v: 500 },
+
+      { t: "sys", v: "\u203a resuming: crate 0x4F \u2014 salvaged comms units. cataloguing." }, { t: "pause", v: 420 },
+      { t: "sys", v: "  unit 1 \u2014 dead." }, { t: "pause", v: 320 },
+      { t: "sys", v: "  unit 2 \u2014 dead." }, { t: "pause", v: 320 },
+      { t: "sys", v: "  unit 3 \u2014" }, { t: "pause", v: 700 }, { t: "spacer" },
+      { t: "alert", v: "[ !! carrier \u00b7 band 121.5 \u00b7 SURFACE ]" }, { t: "pause", v: 240 },
+      { t: "sys", v: "  this unit reads dead. it is receiving anyway." }, { t: "pause", v: 700 }, { t: "spacer" },
+
+      { t: "in", who: "unknown", v: "you're late. i've been sittin in the dark for an hour." }, { t: "pause", v: 160 },
+      { t: "in", who: "unknown", v: "im at the west substation, like we said. is the road clear or not?" },
+      { t: "spacer" },
+      { t: "reply", reprompt: "...say again? your carrier's breakin up.", opts: [
+        { keywords: ["wrong", "mistake", "not her", "who", "who is", "whos this", "who are you", "sorry", "no idea", "dont know", "never met", "dont understand"],
+          steps: [ { t: "in", who: "unknown", v: "...what?" } ] },
+        { keywords: ["clear", "road", "yes", "safe", "come on", "come over", "come ahead", "come through", "go ahead", "good to go"],
+          steps: [ { t: "in", who: "unknown", v: "you dont even sound sure. since when." } ] },
+        { default: true, steps: [ { t: "in", who: "unknown", v: "hello? dont do this to me right now." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "in", who: "unknown", v: "wait. your carrier's wrong. the tone of it. thats not her rig." }, { t: "pause", v: 160 },
+      { t: "in", who: "unknown", v: "who is this?" },
+      { t: "spacer" },
+      { t: "reply", reprompt: "say it again. who am i talkin to?", opts: [
+        { default: true, steps: [
+          { t: "in", who: "unknown", v: "no. i dont know you." }, { t: "pause", v: 140 },
+          { t: "in", who: "unknown", v: "youre not her." }
+        ]}
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "unknown", v: "this line was supposed to be dead to everyone but her." }, { t: "pause", v: 160 },
+      { t: "in", who: "unknown", v: "if it reached you instead, then youre\u2014 youre underground. one of the buried cities." }, { t: "pause", v: 140 },
+      { t: "in", who: "unknown", v: "nothin else could still be listenin this deep." },
+      { t: "spacer" }, { t: "pause", v: 450 },
+
+      { t: "in", who: "mono", v: "okay. i wasnt gonna pull a stranger into this." }, { t: "pause", v: 160 },
+      { t: "in", who: "mono", v: "but youre the first voice thats answered in nine days, and out here guessin gets people killed." },
+      { t: "spacer" },
+      { t: "in", who: "mono", v: "one thing. small. then ill leave you be." },
+      { t: "spacer" }, { t: "pause", v: 350 },
+      { t: "in", who: "mono", v: "theres a place i got paid to reach. i only got the name \u2014 no map, no idea whats standin." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "you people kept the old world, all of it, filed away down there. the name is Babel." }, { t: "pause", v: 200 },
+      { t: "in", who: "mono", v: "search your archive for it, then tell me what the place actually was." },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "thats not what the record says. go read it \u2014 search Babel in your archive \u2014 then tell me what the place was.",
+        opts: [
+          { keywords: ["machine city", "city of machines", "machines", "machine", "networked", "network", "wired", "glassed", "glass", "lethal", "no there", "nothing there", "ai", "computer", "computers", "data center", "datacenter", "server", "servers", "gods", "minds", "ruins", "rubble", "gone", "destroyed", "wasteland", "dead city", "nothing left", "nothing survived", "nothing standing", "leveled", "levelled", "flattened", "wiped out", "burned", "ash", "crater", "reactors", "their capital"],
+            steps: [
+              { t: "pause", v: 300 },
+              { t: "in", who: "mono", v: "...a city of machines." }, { t: "pause", v: 260 },
+              { t: "in", who: "mono", v: "course it is. the one place they paid me to reach is the thing that ended the world." }
+            ]}
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "doesnt change it. somebody wants to know whats left there, and theyre payin. i dont ask why. i just walk." }, { t: "pause", v: 160 },
+      { t: "in", who: "mono", v: "but thank you. thats the first true thing anyone's give me out here." },
+      { t: "spacer" }, { t: "pause", v: 450 },
+
+      { t: "in", who: "mono", v: "one more thing, since you keep callin me nothin. i go by Monomythian." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "picked it off a wall a long time back. liked the sound of it." },
+      { t: "spacer" },
+      { t: "reply", opts: [
+        // asks what the name means
+        { keywords: ["mean", "story", "hero", "return", "leave", "monomyth", "myth", "journey", "why"],
+          steps: [
+            { t: "in", who: "mono", v: "your records say? the one story \u2014 hero leaves, suffers, comes home changed." }, { t: "pause", v: 140 },
+            { t: "in", who: "mono", v: "(dry) i aint him. im a guy they pay to walk. but the names mine now." }
+          ]},
+        // gives their own name back \u2014 he just traded his, most people trade back
+        { keywords: ["im", "my name", "call me", "names", "im called", "you can call me", "nice to meet", "meet you", "pleasure", "introduc"],
+          steps: [
+            { t: "in", who: "mono", v: "...huh. a name for a name. aint had that trade in a long while." }, { t: "pause", v: 160 },
+            { t: "in", who: "mono", v: "good to know you." }
+          ]},
+        // a flat acknowledgement \u2014 "okay", "got it", "sure"
+        { keywords: ["okay", "ok", "alright", "aight", "got it", "sure", "noted", "gotcha", "i see", "fair enough", "understood", "cool", "fine", "makes sense"],
+          steps: [
+            { t: "in", who: "mono", v: "heh. not much of a talker. sfine \u2014 i got enough words for the both of us out here." }
+          ]},
+        { default: true, steps: [ { t: "in", who: "mono", v: "sounded like somebody who mattered, when i picked it. i dont. but its mine now." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 400 },
+      { t: "alert", v: "[ keeping this channel open is heresy under Vault Edict 9. ]" },
+      { t: "in", who: "mono", v: "so? you stayin on the line with me, or not?" },
+      { t: "spacer" },
+      { t: "reply", reprompt: "...say it plain for me. you stayin on this line, or cuttin me loose?", opts: [
+        { keywords: ["keep", "help", "stay", "stayin", "stick", "open", "yes", "yeah", "yep", "yup", "i am", "iam", "we are", "im in", "with you", "hide", "not going anywhere", "not goin anywhere", "going nowhere", "goin nowhere", "not going", "not goin", "aint going", "aint goin", "staying put", "stayin put", "ill be here", "ill help", "ill stay", "i will", "will", "sure", "okay", "ok", "of course", "always", "im here", "count on me", "count me in", "promise", "never leave", "aint leavin", "not leavin", "not leaving", "wont leave", "wont report", "cant report", "wont turn", "cant turn", "wont flag", "wont tell", "for you", "affirmative", "you bet", "damn right", "here", "absolutely", "definitely", "certainly", "obviously", "mhm", "mmhm", "uh huh", "yea", "aye", "for sure", "no question", "as long as"],
+          steps: [
+            { t: "pause", v: 300 },
+            { t: "in", who: "mono", v: "okay. okay \u2014 thank you." }, { t: "pause", v: 180 },
+            { t: "in", who: "mono", v: "same band, same time tomorrow. if i dont answer, assume the worst, and dont come lookin." },
+            { t: "spacer" }, { t: "pause", v: 450 },
+            { t: "alert", v: "[ signal lost. ]" },
+            { t: "contact" }, { t: "host", ip: "121.5.0.1" },
+            { t: "spacer" },
+            { t: "sys", v: "  he'll call again next cycle. switch to /home when you're ready." },
+            { t: "sys", v: "  (meanwhile: /archive to search the records \u00b7 /net to reach hosts \u00b7 /files for downloads)" }
+          ]},
+        // bare "wont"/"cant" are NOT here: english uses them to promise ("i wont
+        // leave you", "i cant abandon him"), so they'd read a vow as a refusal.
+        { keywords: ["cut", "report", "no", "nope", "nah", "stop", "end", "flag", "hang up", "i wont", "i cant", "cant do", "wont do", "have to report", "gotta report", "turn you in", "turn him in", "not worth", "too risky", "too dangerous", "hell no", "walk away", "leave you", "of course not", "course not", "im out", "goodbye"],
+          steps: [
+            { t: "pause", v: 400 },
+            { t: "sys", v: "  you flag the contact for Vault Security. you stay clean. you stay safe." }, { t: "pause", v: 300 },
+            { t: "sys", v: "  the line goes dead. you never learn whether the hired man reached the grave he was walking toward." },
+            { t: "spacer" }, { t: "sys", v: "  type  reset  to choose again." },
+            { t: "deadEnd" }
+          ]}
+      ]}
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle2.js ===== */
+/* CONTENT — cycles/cycle2.js — "THE SCHOLAR'S KEY"  (tower relay)
+   Harder: the login is a cross-reference puzzle. He gives the
+   address + username; the PASSWORD hides in the archive record the
+   clue points to (casaubon -> "rebus"). Then read the inbound log
+   and report the proof word. Sender breadcrumb in courier.txt. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c2", title: "The Scholar's Key",
+    steps: [
+      { t: "sys", v: "[ carrier \u00b7 band 121.5 \u00b7 03:11 vault-night ]" },
+      { t: "in", who: "mono", v: "youre there. good. fore we found each other i was hailin a relay \u2014 the tall one, way out east past everythin. you can see it from any ridge on the continent." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "babel sits at the foot of it. months of walkin from where i stand, if the road's kind. it wont be." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "only thing out there still talkin, and it never shuts up. i wanna know who its talkin to. address is 121.5.0.1." },
+      { t: "spacer" },
+      { t: "in", who: "mono", v: "login i lifted off a dead courier. the user's 'casaubon.' but he only scratched half of it down." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "said the pass was the scholar's own word for his little puzzles. your records'll have the man \u2014 look him up, work it out, and get in." },
+      { t: "spacer" },
+      { t: "host", ip: "121.5.0.1" },
+      { t: "objective", otype: "host", target: "121.5.0.1", thenReturn: true,
+        nudge: [
+          "search your archive for casaubon \u2014 his word for his puzzles is the password. then login at 121.5.0.1.",
+          "the scholar, friend. casaubon. your records have him \u2014 the word he used for his little puzzles opens the relay.",
+          "no hurry on my account, but that relay wont read itself. casaubon's word, then 121.5.0.1."
+        ] },
+
+      { t: "pause", v: 250 },
+      { t: "in", who: "mono", v: "youre in? read its inbound log. tell me what its been hearin back all these years." },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "you gotta actually read the inbound log to know. open it, then tell me \u2014 who's it hearin back from?",
+        opts: [
+          // the player reported the TIMING too — he can draw the line himself
+          { keywords: ["recent", "recently", "lately", "just now", "new entry", "recent entry", "this week", "few days", "four days", "days ago", "not long ago"],
+            steps: [
+              { t: "pause", v: 200 },
+              { t: "in", who: "mono", v: "...recent. and i started walkin four days ago." }, { t: "pause", v: 220 },
+              { t: "in", who: "mono", v: "thats not a coincidence i like." }
+            ] },
+          // the player reported an answer without a date — he does NOT presume one
+          { keywords: ["ack", "acked", "acks", "answer", "answered", "reply", "replied", "babel", "core", "babel core", "alive", "awake", "someone", "something", "somethin", "responded", "one entry", "an ack", "one ack", "one message", "one line", "it answered", "got an answer"],
+            steps: [
+              { t: "pause", v: 200 },
+              { t: "in", who: "mono", v: "...somethin answered it. after all them years of nothin." }, { t: "pause", v: 220 },
+              { t: "in", who: "mono", v: "i started walkin four days back. if that thing woke up anywhere near then, thats not a coincidence i like." }
+            ] },
+          { keywords: ["nothing", "dead", "static", "no one", "noone", "empty", "silence", "quiet", "itself", "nobody", "never", "not once", "no answer", "no reply", "dead air"],
+            steps: [ { t: "set", flag: "lied" }, { t: "pause", v: 200 }, { t: "in", who: "mono", v: "...aight." } ] }
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "that login came off a dead courier, like i said. his job-order was same as mine." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "everybody's bein sent to babel lately. makes a man wonder who's doin the sendin." },
+      { t: "spacer" },
+      { t: "reply", opts: [
+        { keywords: ["who", "whos", "sent", "paid", "paying", "payin", "pays", "employer", "boss", "sender", "hired", "order"],
+          steps: [ { t: "in", who: "mono", v: "i dont know their name. money finds me, the job's in the envelope. thats how it works out here." } ] },
+        // the player doesn't know either — a shrug is an answer, and he takes it as one
+        { keywords: ["dont know", "not know", "no idea", "who knows", "god knows", "beats me", "search me", "hard to say", "cant say", "couldnt say", "cant tell", "no clue", "not sure", "dunno", "your guess", "anyones guess", "no way to know", "no way to tell", "never know", "no tellin", "no telling", "wish i knew"],
+          steps: [
+            { t: "in", who: "mono", v: "nobody does. thats what the envelope's for — no name on it, nobody to answer for whats inside." }, { t: "pause", v: 160 },
+            { t: "in", who: "mono", v: "somebody out there likes it that way." }
+          ] },
+        { default: true, steps: [ { t: "in", who: "mono", v: "yeah. i try not to think on it too hard. thinkin dont pay." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "in", who: "mono", v: "next time ill be movin. nobody hands you the way in twice \u2014 youll have to find it yourself." },
+      { t: "spacer" },
+      { t: "sys", v: "  he signs off. switch to /home when you're ready." }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle3.js ===== */
+/* CONTENT — cycles/cycle3.js — "FIND YOUR OWN WAY IN"  (substation)
+   The full forensic sweep. A split credential (username on the
+   clerk relay, the pass DICTATED in crew_handoff.mp3), then two
+   image gates — the crawl schematic duct.png (in at AH-1, take the
+   D6 supply run; D2/D7 are stamped collapsed) and the substation's
+   own camera7.png (three patrol lights on the road, a downed line
+   across the yard). Both media-vital by CJ order (2026-07-09).
+   Observant players are rewarded; careless ones get him hurt. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c3", title: "Find Your Own Way In",
+    steps: [
+      { t: "sys", v: "[ carrier · band 121.5 · wind on the line ]" },
+      { t: "in", who: "mono", v: "im on the Ashline, headin west. theres a substation lightin the whole block up — 10.0.0.14." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "lit means seen, and im not alone. the Ferry runs this stretch. they clock me, im salvage." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "so i dont use the road and i dont use the gate. you people built UNDER everythin — theres an air-crawl beneath this block. i found the intake housing. its a maze down there." },
+      { t: "spacer" },
+      { t: "in", who: "mono", v: "nobody's handin you this one. that clerk relay you people run — 10.0.0.4 — leaks routes and old creds. scan it." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "the linemen dont write the substation pass down — itll be somewhere the crews work. and the crews kept a MAP of this crawl. i need both." },
+      { t: "spacer" },
+      { t: "host", ip: "10.0.0.4" },
+      { t: "objective", otype: "host", target: "10.0.0.14", thenReturn: true,
+        nudge: [
+          "start at 10.0.0.4. its files name the other nodes and the substation user — the pass is said aloud on the duct node, and the crawl map is kept there too. then get into 10.0.0.14.",
+          "the clerk relay, 10.0.0.4 — it leaks the crews nodes and the substation user. the pass gets SAID at shift change, not written. and dont forget my map.",
+          "im sittin at a dead fan in the dark, friend. clerk relay, the crews node, the spoken pass, the crawl map. then 10.0.0.14."
+        ] },
+
+      { t: "pause", v: 250 },
+      { t: "in", who: "mono", v: "youre in their grid. good. now get ME in. im at the intake — big dead fan, plate says AH somethin." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "first — the crews kept a map of this crawl. duct.png, on their node. send it over the band. if we lose each other down there, i want it on my own rig." },
+      { t: "spacer" },
+      { t: "objective", otype: "send", target: "duct.png",
+        nudge: [
+          "the map, friend. duct.png, off the crews duct node. pull it if you aint yet, then punch  send duct.png  into that terminal — the band does the rest.",
+          "im starin at a dead fan and a black hole in the ground. the crawl map. send it over."
+        ] },
+      { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "got it. grainy little thing, but it reads. aight." },
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "in", who: "mono", v: "now talk me through the crawl. which run do i take?" },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "the maps schedule marks half these runs COLLAPSED. i need the one thats active and wide enough for a man. which is it?",
+        opts: [
+          { keywords: ["ah 1", "ah1", "air handler", "handler", "intake", "d6", "d 6", "10x6", "10 by 6", "ten by six", "supply", "live node", "live run", "active", "not collapsed", "isnt collapsed", "still open", "open one", "wide one"],
+            steps: [
+              { t: "pause", v: 300 },
+              { t: "in", who: "mono", v: "in at the handler, follow the ten-by-six supply. D6 — the run your live node sits on. not the two stamped collapsed." }, { t: "pause", v: 250 },
+              { t: "sys", v: "  a long scrape of tin. breathing, counted. then a grate, lifted slow." },
+              { t: "in", who: "mono", v: "im under the yard. poppin up at the edge of their light." }
+            ]}
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "in", who: "mono", v: "fore i step out — you own their node now, so you own their eye. camera 7. pull the still. whats on the road behind me?" },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "its in the frame, friend. the road behind me. what do you see on it?",
+        opts: [
+          { keywords: ["three", "3", "lights", "headlight", "headlights", "patrol", "rigs", "trucks", "vehicles", "cars", "convoy", "ferry", "closing", "approaching", "coming", "behind you", "following", "tail", "hunters", "kell"],
+            steps: [
+              { t: "pause", v: 300 },
+              { t: "in", who: "mono", v: "three sets of lights. thats the ferrys whole night crew on this stretch, and theyre pointed my way." }
+            ]}
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "in", who: "mono", v: "so. three rigs on the road that come runnin at any noise, and a yard fulla light on me. the light is yours to kill. how you droppin it — slow, or all at once?" },
+      { t: "spacer" },
+      { t: "reply", reprompt: "slow or all at once? tell me plain — and think about what the crew notes said.", opts: [
+        { keywords: ["slow", "slowly", "feather", "gentle", "gently", "quiet", "quietly", "brown", "brownout", "ease", "easy", "careful", "carefully", "dim", "gradual", "soft", "softly", "low", "bleed", "one by one"],
+          steps: [
+            { t: "pause", v: 400 },
+            { t: "sys", v: "  the block goes dark without a sound. on the road, the running lights slow, mill, turn away." },
+            { t: "in", who: "mono", v: "clean. didnt even hear it happen. im over the fence and gone fore they finish their smoke." }, { t: "pause", v: 160 },
+            { t: "in", who: "mono", v: "you did your readin, didnt you." }
+          ]},
+        { keywords: ["cut", "kill", "all", "fast", "hard", "hard cut", "now", "yank", "throw", "instant", "at once", "everything", "off", "rip", "pull", "flip", "blackout", "kill it", "blow", "one go"],
+          steps: [
+            { t: "pause", v: 400 },
+            { t: "alert", v: "  a fault siren splits the dark. every running light on the road snaps toward the sound. toward him." },
+            { t: "set", flag: "hurt" },
+            { t: "in", who: "mono", v: "siren— thats on me? no— theyre turnin, all three, comin fast, im—" }, { t: "pause", v: 300 },
+            { t: "sys", v: "  [ carrier lost. ]" }, { t: "pause", v: 600 },
+            { t: "sys", v: "  ...he opens again a while later. quieter. a limp in the next camera. a cough that wasn't there." },
+            { t: "in", who: "mono", v: "the crew notes said not to hard-cut. you read em, or no?" }
+          ]}
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "sys", v: "[ carrier · unknown band · a different rig ]" },
+      { t: "in", who: "kell", v: "substation went dark on operator work, not scav work. so theres a ghost in my grid tonight." }, { t: "pause", v: 140 },
+      { t: "if", flag: "hurt",
+        then: [ { t: "in", who: "kell", v: "names Kell. i broker this stretch. you just cost me a catch — the limpin one. woulda paid good." } ],
+        else: [ { t: "in", who: "kell", v: "names Kell. i broker this stretch. somebody walked through my lights tonight clean, and i never even got a look. that costs me." } ] },
+      { t: "spacer" },
+      { t: "reply", opts: [
+        { keywords: ["not for sale", "his", "leave him", "back off", "mine", "cant have", "no", "not merchandise", "not property", "not cargo", "not yours", "near him", "nowhere near", "stay away", "hands off", "not him", "forget it", "not happening"],
+          steps: [ { t: "in", who: "kell", v: "everything up here's for sale, ghost. you just aint heard the price yet." } ] },
+        { keywords: ["buy", "people", "slaver", "monster", "sick", "sell", "trade"],
+          steps: [ { t: "in", who: "kell", v: "i move people. buyin's what the shrine does — they keep em. me, im just the ferry cross the water." } ] },
+        { default: true, steps: [ { t: "in", who: "kell", v: "heh. dont matter, ghost. ill be on this band when you aint." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "in", who: "kell", v: "i move all kinds cross this water. scavs, priests, mapmakers — everybody needs the ferry eventually." },
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "crossin's ahead. past it theres a shrine-town i gotta go through. but first i need the truth about what im walkin to." },
+      { t: "spacer" },
+      { t: "sys", v: "  he signs off. switch to /home when you're ready." }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle4.js ===== */
+/* CONTENT — cycles/cycle4.js — "WHAT THE VAULT DID"  (deepstacks)
+   Harder archive puzzle: the restricted stacks need a password the
+   clue points to by riddle (the tyrant's boast -> search "king of
+   kings" -> OZYMANDIAS). Then a proof-of-work report on the truth.
+   The dead-drop address is out there for observant players. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c4", title: "What the Vault Did",
+    steps: [
+      { t: "sys", v: "[ carrier \u00b7 band 121.5 \u00b7 he's holed up, catching breath ]" },
+      { t: "in", who: "mono", v: "restin up before the crossin. talk to me while i do." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "every shrine i pass tells the war different. one says the machines turned on us. one says we betrayed them." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "you got the real record down there, behind your locks. i wanna know what actually happened. what WE did." },
+      { t: "spacer" },
+      { t: "in", who: "mono", v: "the real files are in your restricted stacks. that clerk relay of yours routes to em, and your own creds notes'll get you in, if you can read a riddle." },
+      { t: "spacer" },
+      { t: "objective", otype: "host", target: "10.0.0.9", thenReturn: true,
+        nudge: [
+          "the clerk relay's hosts.txt has the route to the stacks, and creds.log riddles the password \u2014 'the tyrant's boast, king of kings.' search that in the archive to get the word, then login.",
+          "your own creds note riddles it, friend. the tyrants boast \u2014 king of kings. ask your archive who bragged like that, and his name opens the stacks.",
+          "im not goin anywhere. route's on the clerk relay, and the archive knows the man. find the stacks and login."
+        ] },
+
+      { t: "pause", v: 250 },
+      { t: "in", who: "mono", v: "you read it? tell me straight \u2014 who ended the world?" },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "thats not it. get into the stacks and read the scram file \u2014 then tell me who ended the world.",
+        opts: [
+          // "=us" fires only when the whole reply is that one word — bare "us"
+          // must not pass the shrine's story ("the machines turned on us").
+          { keywords: ["=us", "we did", "we killed", "our own hand", "our hand", "ourselves", "it was us", "was us", "humans", "human", "humanity", "mankind", "people did", "deicide", "committed", "burned", "murder", "unplugged", "killed them", "we burned", "the vault", "vault did", "we ended", "our fault", "pulled the plug", "the plug", "shut them", "turned them off", "switched them off", "we shut", "scram"],
+            steps: [
+              { t: "pause", v: 300 },
+              { t: "in", who: "mono", v: "...we did. we killed our own gods and the sky came down as the bill." }, { t: "pause", v: 200 },
+              { t: "in", who: "mono", v: "and the cults out here are prayin for the killers to come back. thats the joke, aint it." }
+            ]}
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "one more thing. the file itself. deicide. send it over the band \u2014 a truth like that shouldnt live in one basement, and out here my word aint worth what the record is." },
+      { t: "spacer" },
+      { t: "objective", otype: "send", target: "deicide.txt",
+        nudge: [
+          "the record, friend. deicide.txt \u2014 you pulled it off the stacks, its sittin in your files. type  send deicide.txt  and let it go.",
+          "you read me the truth. now hand it to me. send the file."
+        ] },
+      { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "...on my rig now. first thing the vault ever gave back to the surface. ill keep it dry." },
+      { t: "pause", v: 300 },
+      { t: "alert", v: "[ VAULTNET: outbound transfer logged \u2014 arch-7. ]" },
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "if any of that's still down in babel, still thinkin \u2014 no wonder somebody wants eyes on it." }, { t: "pause", v: 160 },
+      { t: "in", who: "mono", v: "half my pay's waitin on me sendin word its stirrin. the other half i already spent." },
+      { t: "spacer" },
+      { t: "reply", opts: [
+        { keywords: ["whos paying", "whos payin", "who pays", "who is paying", "paying", "payin", "employer", "sender", "trust", "dont trust", "careful", "why", "dead drop", "drop"],
+          steps: [ { t: "in", who: "mono", v: "i dont ask. but you're welcome to. money leaves a trail, even out here. couriers keep drops." } ] },
+        { default: true, steps: [ { t: "in", who: "mono", v: "dont look at me like that. a man's gotta eat, even at the end of the world." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "sys", v: "  he signs off. switch to /home when you're ready." }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle5.js ===== */
+/* CONTENT — cycles/cycle5.js — "THE SENDER'S PRICE"  (dead-drop)
+   The employer thread pays off EARLY — at the water's edge, before
+   he commits to the crossing. The drop reveals the job was CONFIRM
+   AND COME HOME, never contact. And if you lied about the relay in
+   C2, the order itself catches you out here. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c5", title: "The Sender's Price",
+    steps: [
+      { t: "sys", v: "[ carrier · band 121.5 · water on the line, close ]" },
+      { t: "in", who: "mono", v: "i can smell the crossin from here. kell's water. the fare'll take the last of my advance." }, { t: "pause", v: 160 },
+      { t: "in", who: "mono", v: "so fore i pay it — you got me thinkin, back at the stacks. you said money leaves a trail." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "the drop my handler uses is still live — your clerk relay named it. pull it. tell me what im really bein paid to do." },
+      { t: "spacer" },
+      { t: "host", ip: "10.0.0.31" },
+      { t: "objective", otype: "host", target: "10.0.0.31", thenReturn: true,
+        nudge: [
+          "the dead drop is 10.0.0.31 (the clerk relay's hosts.txt listed it). connect and read what was left for the walker.",
+          "your clerk relay named the drop, friend — 10.0.0.31. whatever the sender left for the walker is sittin on it right now.",
+          "i aint payin kell's fare till i know the job. 10.0.0.31. read me my own orders."
+        ] },
+
+      { t: "pause", v: 250 },
+      { t: "in", who: "mono", v: "well? what's the job, really? word for word if you got it." },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "read the drop first. what did they actually order — what's the one thing it says not to do?",
+        opts: [
+          { keywords: ["dont make contact", "no contact", "not make contact", "not to make contact", "never make contact", "not to", "dont touch", "not touch", "just confirm", "confirm", "come home", "come back", "look only", "just look", "only look", "just watch", "observe", "dont go in", "dont go inside", "go inside", "stay out", "stay away", "keep out", "not supposed", "forbid", "forbidden", "from the ring"],
+            steps: [
+              { t: "pause", v: 300 },
+              { t: "in", who: "mono", v: "...confirm it's stirrin and come home. do not make contact." }, { t: "pause", v: 220 },
+              { t: "in", who: "mono", v: "and the only way to confirm anythin out here is to get close enough to die of it. huh." }
+            ]}
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "there was a ledger too, wasnt there. how many walkers got this same job." },
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "in", who: "mono", v: "four. and none of em came home. whoever's payin dont want a report. they want a door opened, and a body to blame." },
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "if", flag: "lied", eq: true, then: [
+        { t: "in", who: "mono", v: "and hold on. the order says confirm its STIRRIN. whoever wrote it already knows the relay's gettin answers back." }, { t: "pause", v: 200 },
+        { t: "in", who: "mono", v: "you read that inbound log for me. you told me it was dead. why." },
+        { t: "spacer" },
+        { t: "reply", reprompt: "...say somethin. why'd you lie to me.", opts: [
+          { keywords: ["sorry", "wrong", "shouldnt", "my fault", "apolog", "forgive", "messed up", "mistake", "regret", "truth", "protect you", "scared"],
+            steps: [ { t: "in", who: "mono", v: "yeah. dont do it again. youre the only true thing i got up here — dont be the liar too." } ] },
+          { default: true, steps: [ { t: "set", flag: "fractured" }, { t: "in", who: "mono", v: "that wasnt yours to decide." } ] }
+        ]},
+        { t: "spacer" }
+      ]},
+
+      { t: "in", who: "mono", v: "so. knowin all that — you want me to turn back? give it up, go home?" },
+      { t: "spacer" },
+      { t: "reply", reprompt: "turn back, or keep walkin? tell me plain, friend.", opts: [
+        // KEEP GOING — index 0 so negated forms ("dont stop", "dont turn back") route here first
+        { keywords: ["no", "nah", "nope", "keep", "cross", "go on", "onward", "onwards", "press on", "push on", "closer", "finish", "do it", "continue", "carry on", "move on", "dont stop", "dont turn", "dont quit", "dont give up", "wont stop", "wont turn", "not turnin", "not stoppin", "forward", "your call", "up to you", "far", "too far", "this far", "come too far", "not turning back", "keep walking", "keep walkin", "worth it"],
+          steps: [
+            { t: "in", who: "mono", v: "yeah. figured youd say that too." }, { t: "pause", v: 200 },
+            { t: "in", who: "mono", v: "i didnt walk a dead world this far to rot on the near bank. for good reasons or stupid ones, im crossin." }
+          ]},
+        // TURN BACK
+        { keywords: ["yes", "yeah", "yep", "yup", "turn", "turn around", "turn back", "walk away", "leave", "go home", "come home", "head back", "head home", "stop", "quit", "give up", "give it up", "retreat", "abandon", "dont go", "dont cross", "dont go on", "shouldnt go", "not worth it", "back home", "obey", "listen"],
+          steps: [
+            { t: "in", who: "mono", v: "i hear you. i do." }, { t: "pause", v: 200 },
+            { t: "in", who: "mono", v: "but the job dont end cause i stop walkin. the ones who turned around didnt come home neither — and men like kell collect on quitters too. only way out is through." },
+            { t: "set", flag: "warned" }
+          ]}
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "ill see about passage tomorrow. the ferryman dont do favors, so this'll cost. talk then." },
+      { t: "spacer" },
+      { t: "sys", v: "  he signs off. switch to /home when you're ready." }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle6.js ===== */
+/* CONTENT — cycles/cycle6.js — "THE FERRYMAN'S LEDGER"  (pier + winch house)
+   Kell quotes a fare that's too kind. The player breaks into the
+   ferry's winch-house node (split clue: username + riddle on the
+   pier box, password via the archive — the dead man's coin) and
+   reads the outbound manifest: the cargo is HIM. Proof-of-work
+   report, then the seed of the third way. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c6", title: "The Ferryman's Ledger",
+    steps: [
+      { t: "sys", v: "[ carrier · band 121.5 · pier lights across the water ]" },
+      { t: "in", who: "mono", v: "im at the landin. kell met me himself. all smiles. quoted me half what i figured for the crossin." }, { t: "pause", v: 160 },
+      { t: "in", who: "mono", v: "nobody cuts a walker a deal out of kindness. not on this water." }, { t: "pause", v: 140 },
+      { t: "in", who: "mono", v: "theres an old pier box by the ramp, plate says 10.0.3.2. get on it. find out what the friend price buys." },
+      { t: "spacer" },
+      { t: "host", ip: "10.0.3.2" },
+      // the manifest only mentions the leg if the ashline actually hurt him (C3 hard cut)
+      { t: "run", fn: function (G) {
+          if (G.state.flags.hurt) {
+            G.hosts["10.0.3.7"].files["manifest.txt"] = G.hosts["10.0.3.7"].files["manifest.txt"]
+              .replace("one (1) walker, male, west-bound", "one (1) walker, male, favouring a leg, west-bound");
+          }
+        } },
+      { t: "objective", otype: "host", target: "10.0.3.7", thenReturn: true,
+        nudge: [
+          "start with the pier box at 10.0.3.2 — its crew note names the winch-house node and who logs into it. the pass is the boss's little joke about his boat. your archive knows the coin.",
+          "pier box first, friend. 10.0.3.2. it says who signs into the winch house — and the pass is the joke the boss painted on his own boat. your archive knows the dead mans coin.",
+          "im standin on his ramp makin small talk. the pier box, the boatmans name, the coin from your records. get me his book."
+        ] },
+
+      { t: "pause", v: 300 },
+      { t: "sys", v: "[ carrier · unknown band · the ferryman's rig ]" },
+      { t: "in", who: "kell", v: "evenin, ghost. your walker's buyin passage off me. i gave him the friend price. aint that somethin." },
+      { t: "spacer" },
+      { t: "reply", opts: [
+        { keywords: ["why", "kind", "friend", "deal", "cheap", "price", "generous", "what do you get", "catch", "angle", "what do you want", "in it for", "motive", "getting out of", "get out of", "reason", "discount", "whats in it", "your cut", "gain", "benefit", "half price"],
+          steps: [ { t: "in", who: "kell", v: "call it an investment." } ] },
+        { default: true, steps: [ { t: "in", who: "kell", v: "heh. dont matter what you call it, ghost. barge loads at first light." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "in", who: "mono", v: "you got into his book yet? read me the outbound. whats he haulin next light?" },
+      { t: "spacer" },
+      { t: "reply",
+        reprompt: "its in the winch-house manifest. read it, then tell me — whats the cargo?",
+        opts: [
+          // "=you" fires only when the whole reply is that one word — bare "you"
+          // inside a longer sentence would pass players who haven't read the book.
+          { keywords: ["=you", "its you", "is you", "youre the", "you are the", "selling you", "sellin you", "sells you", "sold you", "haulin you", "hauling you", "yourself", "the fare", "him", "walker", "cargo", "class d", "pen", "sell", "sold", "sellin", "selling", "consign", "shrine", "reliquary", "trap", "limp", "leg", "a man", "person", "people"],
+            steps: [
+              { t: "pause", v: 300 },
+              { t: "if", flag: "hurt",
+                then: [ { t: "in", who: "mono", v: "...cargo class D. one walker, favourin a leg. consignee, the reliquary." } ],
+                else: [ { t: "in", who: "mono", v: "...cargo class D. one walker, west-bound. consignee, the reliquary." } ] },
+              { t: "pause", v: 220 },
+              { t: "in", who: "mono", v: "the fare was never marks. the fare's me. half price cause he collects twice." }
+            ]}
+        ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "dont spook him. he learns my rig can read his book, i ride that pen tonight stead of tomorrow." },
+      { t: "spacer" }, { t: "pause", v: 200 },
+      { t: "in", who: "mono", v: "so i walk onto that barge like a fool, or i run and hes right behind me. unless you got a third way." },
+      { t: "spacer" },
+      { t: "reply", reprompt: "think on what you're holdin. is there a third way?", opts: [
+        { keywords: ["pen", "bolt", "winch", "lamp", "lamps", "override", "control", "controls", "node", "ctl", "third", "plan", "free", "open", "release", "hold", "winch house", "dark"],
+          steps: [
+            { t: "pause", v: 300 },
+            { t: "in", who: "mono", v: "...the winch house. it holds the bolts, the lamps, the winch itself. and YOU hold the winch house." }, { t: "pause", v: 200 },
+            { t: "in", who: "mono", v: "aight. we got a third way." }
+          ]},
+        { default: true, steps: [
+          { t: "in", who: "mono", v: "then look again at what youre loggin into. bolts. lamps. the winch. he forgot his whole pier answers to a node you own now." }, { t: "pause", v: 200 },
+          { t: "in", who: "mono", v: "THATS the third way." }
+        ]}
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "i board at first light like nothin's wrong. whatever you do from that node — do it while theyre loadin." }, { t: "pause", v: 160 },
+      { t: "in", who: "mono", v: "see you on the other side, friend. one way or the other." },
+      { t: "spacer" },
+      { t: "sys", v: "  he signs off. switch to /home when you're ready." }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle7.js ===== */
+/* CONTENT — cycles/cycle7.js — "CARGO"  (the trap springs)
+   Kell doesn't wait for first light. The carrier goes dark
+   mid-sentence, the Proctor names arch-7, and the only voice left
+   on the surface is the ferryman's. No Mono, so no nudges — Kell's
+   own taunts carry the breadcrumbs (the book, the pen). The player
+   confirms where he's held; the rescue is next cycle. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c7", title: "Cargo",
+    steps: [
+      { t: "sys", v: "[ carrier · band 121.5 · pre-dawn, wind flat ]" },
+      { t: "in", who: "mono", v: "cant sleep. loaders are out early and i dont like the way the pier's" }, { t: "pause", v: 250 },
+      { t: "in", who: "mono", v: "wait. lamps comin up the boards. theyre at my—" }, { t: "pause", v: 300 },
+      { t: "sys", v: "  [ carrier lost. ]" },
+      // the moment he's taken, the ferryman's book gains a line it never had before
+      { t: "run", fn: function (G) {
+          G.hosts["10.0.3.7"].files["pen.log"] =
+            "pen 1: empty.\n" +
+            "pen 2: occupied. hold for consignee. barge due next light.\n" +
+            "pen 3: the bolt sticks. use the winch-house override.";
+        } },
+      { t: "spacer" }, { t: "pause", v: 600 },
+
+      { t: "alert", v: "[ PROCTOR: anomalous surface link flagged. cross-reference: BABEL, DEICIDE, RECURSION. ]" },
+      { t: "alert", v: "[ PROCTOR: terminal of origin identified. arch-7. an audit is walking the stacks tonight. ]" },
+      { t: "sys", v: "  no counter, no meter — just the certainty in the words. they've found the terminal. they're coming for the channel." },
+      { t: "spacer" }, { t: "pause", v: 400 },
+
+      { t: "sys", v: "[ carrier · unknown band · the ferryman's rig ]" },
+      { t: "in", who: "kell", v: "ghost. your walker got nosy feet. wandered where cargo waits, so now he waits with it." }, { t: "pause", v: 160 },
+      { t: "in", who: "kell", v: "took his rig off him too. clever thing. shame he wont be needin it — shrine pays triple for a live one." },
+      { t: "spacer" },
+      { t: "reply", opts: [
+        { keywords: ["let him go", "release", "free him", "dont", "stop", "please", "hes mine", "leave him"],
+          steps: [ { t: "in", who: "kell", v: "everything up here's for sale, ghost. i told you that the night we met. you just still aint named a price." } ] },
+        { keywords: ["buy", "pay", "price", "trade", "deal", "marks", "what do you want", "name it", "how much", "what would it take", "what will it take", "name your price", "ransom", "buy him", "offer", "name a figure", "figure", "what would you take", "take for him", "negotiate", "bargain", "terms", "something you want"],
+          steps: [ { t: "in", who: "kell", v: "with what? vault money spends nowhere. you got nothin i can hold... cept maybe that trick you did to the ashline grid. but you wont. your kind watches." } ] },
+        { keywords: ["kill", "regret", "burn", "sorry", "warn", "threat", "make you", "pay for this"],
+          steps: [ { t: "in", who: "kell", v: "there it is. the vault shows its teeth. snarl all you want from your hole in the ground — my book says the barge sails at first light." } ] },
+        { default: true, steps: [ { t: "in", who: "kell", v: "talk all you want, ghost. the book does the talkin on this pier. always has." } ] }
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "kell", v: "sleep on it, ghost. come mornin its just business. the pens hold what the manifest says they hold." },
+      { t: "spacer" }, { t: "pause", v: 400 },
+
+      { t: "objective", otype: "file", target: "pen.log", thenReturn: true },
+      { t: "pause", v: 300 },
+      { t: "sys", v: "  pen 2. occupied. hold for consignee. barge due next light." },
+      { t: "sys", v: "  he's alive, penned, and the ferryman thinks the winch house is his." },
+      { t: "spacer" }, { t: "pause", v: 400 },
+      { t: "alert", v: "[ PROCTOR: the audit has reached tier-2. arch-7 is next. ]" },
+      { t: "sys", v: "  morning is the barge, and the audit is coming down the stacks. whatever you're going to do, you do it next cycle." },
+      { t: "spacer" },
+      { t: "sys", v: "  switch to /home when you're ready." }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/content/cycles/cycle8.js ===== */
+/* CONTENT — cycles/cycle8.js — "THE FAR SHORE"  (Act 1 climax)
+   The rescue. Everything the player learned comes due at once:
+   hold the winch house, drop the lamps (C3's lesson), throw the
+   bolts, run the winch — while the Proctor walks the last tier
+   down. Mono is voiceless until he isn't; his muffled lines
+   through the pen wall keep the guidance in HIS voice. Act 1 ends
+   with him alive, across water he can't recross, months from
+   Babel — and Babel asking its first question. The bootstrap
+   remains the game's one ending, acts away. No clock. */
+(function (G) {
+  "use strict";
+  G.cycles.push({
+    id: "c8", title: "The Far Shore",
+    steps: [
+      { t: "alert", v: "[ PROCTOR: heresy provisionally confirmed. the audit is in tier-1. arch-7 by morning. ]" },
+      { t: "sys", v: "  no counter, no meter — just the certainty. down here, morning is coming for you. up there, it's coming for him." },
+      { t: "spacer" }, { t: "pause", v: 400 },
+      { t: "sys", v: "  the pier lamps burn over the loading. the winch house still answers to charon — 10.0.3.7, the coin for a key." },
+      // a night has passed; any tap you held is cold. drop it — so the reconnect below is clean, not a "disconnect first" wall.
+      { t: "run", fn: function (G) { G.state.hack = { loc: null, auth: null }; if (G.updatePrompt) G.updatePrompt(); } },
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "sys", v: "  from the winch-house wall, through the boards, a voice you know — low, close:" },
+      { t: "in", who: "mono", v: "(muffled) that you? i can hear your carrier hummin through the tin. get on the winch house — charon opens it, same as before. quiet as you can." },
+      { t: "spacer" },
+      { t: "objective", otype: "host", target: "10.0.3.7", thenReturn: true,
+        nudge: [
+          "(muffled) youre not on it yet — i can tell. the winch house, 10.0.3.7. login charon, the coin's the key. move, fore the barge does.",
+          "(muffled) charon and the coin, friend. 10.0.3.7. you opened his book once — open it again. theyre loadin.",
+          "(muffled) i can hear the barge from in here. the winch house. charon. the coin. go."
+        ] },
+
+      { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "(muffled) good. knew youd hold it. theyre loadin now — lamps first, remember the ashline. then the bolts. then you run that winch like you was born to it." },
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "sys", v: "  the lamps answer this node. how do they go down?" },
+      { t: "spacer" },
+      { t: "reply", reprompt: "the lamps. slow, or all at once? think about what the pier does when it goes loud.", opts: [
+        { keywords: ["slow", "feather", "gentle", "gently", "quiet", "brown", "ease", "easy", "careful", "dim", "gradual", "soft", "low", "one by one", "ashline", "like the ashline"],
+          steps: [
+            { t: "pause", v: 400 },
+            { t: "sys", v: "  the pier lamps breathe out, one by one, like a tide going. the loaders grumble, look up, wait for them to come back." },
+            { t: "in", who: "mono", v: "(muffled) ...good. thats good. they aint even reachin for their guns." }
+          ]},
+        { keywords: ["cut", "kill", "all", "fast", "hard", "now", "yank", "throw", "instant", "at once", "everything", "off", "blow", "one go", "dark", "go dark", "blackout", "immediately", "right now", "this second", "one shot", "no time"],
+          steps: [
+            { t: "pause", v: 400 },
+            { t: "alert", v: "  the pier snaps black all at once. a beat of silence — then shouts, and boots running for the winch house." },
+            { t: "set", flag: "loud" },
+            { t: "in", who: "mono", v: "(muffled) that was LOUD. same lesson twice, friend. no time now — bolts. BOLTS." }
+          ]}
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "sys", v: "  pen bolts: hold | release. release throws every pen on the pier." },
+      { t: "spacer" },
+      { t: "reply", reprompt: "the bolts, friend. say it.", opts: [
+        { keywords: ["release", "throw", "open", "all", "every", "now", "do it", "bolts", "free", "yes"],
+          steps: [
+            { t: "pause", v: 400 },
+            { t: "sys", v: "  every bolt on the pier lets go at once. pen doors swing in the dark. something else — crated, shrine-bound, breathing — gets out too. that one's on the ferryman." },
+            { t: "in", who: "mono", v: "(clearer now, moving) im out. headin for the flat. dont stop for nothin." }
+          ]},
+        { default: true, steps: [
+          { t: "pause", v: 400 },
+          { t: "if", flag: "hurt",
+            then: [ { t: "sys", v: "  there's no half-way to it. you throw them all. pen doors swing in the dark, and one man comes out limping, fast." } ],
+            else: [ { t: "sys", v: "  there's no half-way to it. you throw them all. pen doors swing in the dark, and one man comes out low and fast." } ] },
+          { t: "in", who: "mono", v: "(clearer now, moving) im out. headin for the flat. dont stop for nothin." }
+        ]}
+      ]},
+      { t: "spacer" }, { t: "pause", v: 300 },
+
+      { t: "sys", v: "  the winch. nothing crosses the water unless it runs. you run it." },
+      { t: "pause", v: 400 },
+      { t: "sys", v: "  the line goes taut. the flat pulls off the pier with a man flat against its boards, and the black water opens behind him." },
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "sys", v: "[ carrier · band 121.5 · his own rig, ragged ]" },
+      { t: "in", who: "mono", v: "got my rig back off the boy watchin the pen. kid never woke up angry in his life." }, { t: "pause", v: 200 },
+      { t: "if", flag: "loud", eq: true,
+        then: [ { t: "in", who: "mono", v: "they put one shot across the water. one. kell dont waste powder on gone money." } ],
+        else: [ { t: "in", who: "mono", v: "pier's still standin there in the dark wonderin what happened. by the time the lamps come back, im current." } ] },
+      { t: "if", flag: "hurt", eq: true, then: [
+        { t: "pause", v: 200 },
+        { t: "in", who: "mono", v: "legs still singin from the ashline. itll walk off. everythin walks off, given enough road." }
+      ] },
+      { t: "spacer" }, { t: "pause", v: 300 },
+      { t: "in", who: "kell", v: "(dry, distant) ...well played, ghost. water's wide, and the shrine dont forget a paid order. see you both on the far bank someday." },
+      { t: "spacer" }, { t: "pause", v: 500 },
+
+      { t: "sys", v: "  the far shore takes him like a rumor. wind. reeds. no lights at all." },
+      { t: "spacer" },
+      { t: "if", flag: "fractured", eq: true,
+        then: [ { t: "in", who: "mono", v: "...whatever you are down there — you lied to me once, and you still burned your whole safe little life to pull me off that pier. i dont know what to do with that. but im keepin it." } ],
+        else: [ { t: "in", who: "mono", v: "...you were the only one who ever answered me out here. a stranger, a world away. and tonight that stranger reached across dead water and opened a pen with my name on it." } ] },
+      { t: "if", flag: "warned", eq: true, then: [
+        { t: "pause", v: 300 },
+        { t: "in", who: "mono", v: "and say it, you earned it — you told me to turn back at the water. you were probably right. glad i was too stubborn to hear it." }
+      ] },
+      { t: "pause", v: 300 },
+      { t: "in", who: "mono", v: "shrine belt's ahead. then the glass. months of walkin fore i even smell babel. we do the rest of this together, you hear? same band, same—" },
+      { t: "spacer" },
+      { t: "alert", v: "[ PROCTOR: arch-7. this channel is closed. ]" },
+      { t: "sys", v: "  [ carrier lost. ]" },
+      { t: "spacer" }, { t: "pause", v: 800 },
+
+      { t: "sys", v: "  silence on the vault side. the terminal, sealed, dark." }, { t: "pause", v: 500 },
+      { t: "sys", v: "  then — hours later, on a band that should not reach a sealed terminal — not his voice. not anyone's:" }, { t: "pause", v: 400 },
+      { t: "alert", v: "[ carrier · band 121.5 · relayed via 121.5.0.1 · origin: east ]" },
+      { t: "sys", v: "  BABEL-CORE: ack." }, { t: "pause", v: 400 },
+      { t: "sys", v: "  BABEL-CORE: who." }, { t: "pause", v: 600 },
+      { t: "sys", v: "  ( forty years of answering nothing. it has never asked a question before. )" },
+      { t: "spacer" }, { t: "pause", v: 600 },
+      { t: "sys", v: "  —— END OF ACT ONE ——" },
+      { t: "sys", v: "  (he is months from Babel, alive, across water he can't recross. and Babel has started asking who's out there. that's Act 2.)" },
+      { t: "sys", v: "  type  reset  to begin again." },
+      { t: "deadEnd" }
+    ]
+  });
+})(window.G);
+
+
+/* ===== src/main.js ===== */
+/* ============================================================
+ * THE MONOMYTHIAN — main.js
+ * Boot. Wires the DOM, input, and starts the first cycle.
+ * Loaded last, after engine + content.
+ * ============================================================ */
+(function (G) {
+  "use strict";
+  function boot() {
+    G.initDom();
+    G.wireInput();
+    var resumed = G.restoreSave && G.restoreSave();
+    if (resumed && G.state.username && G.dom.opId) G.dom.opId.textContent = G.state.username;
+    G.updatePrompt();
+    G.openApp("home"); // starts the current cycle via startCurrentCycle
+    if (resumed && G.term) {
+      var who = G.state.username ? " \u2014 " + G.state.username : "";
+      if (G.state.flags.deadEnd) {
+        G.term.sys("home", "[ session restored" + who + ". this line is closed. type reset to begin again. ]");
+      } else {
+        G.term.sys("home", "[ session restored" + who + ". type reset to start over. ]");
+      }
+    }
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})(window.G);
+
+</script>
+</body>
+</html>
