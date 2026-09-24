@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 — THE MONOMYTHIAN</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='50' height='90' x='25' y='5' fill='%230e0e0e'/></svg>">
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #0e0e0e;
+  --dim: #8c8c8c;
+  --faint: #dcdcdc;
+  --line: #ececec;
+  --alert: #a8261c;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --w: 780px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.wrap {
+  width: 100%;
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 0 18px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 0 10px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.brand { font-weight: 600; letter-spacing: .14em; }
+.glyph { color: var(--dim); font-weight: 400; }
+.hsep { color: var(--faint); }
+.meta { color: var(--dim); font-size: 11px; }
+.meta .here { color: var(--ink); }
+.content {
+  flex: 1;
+  padding: 24px 0;
+}
+.sys { color: var(--dim); margin-bottom: 6px; }
+.alert { color: var(--alert); margin-bottom: 14px; }
+.prompt-line { margin-top: 18px; }
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a:hover {
+  background: var(--ink);
+  color: var(--bg);
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="brand">THE&nbsp;MONOMYTHIAN<span class="glyph"> &#9613;</span></span>
+    <span class="hsep">&#183;</span>
+    <span class="meta"><span id="opId">arch-7</span> <span class="hsep">&#183;</span> tier-1 <span class="hsep">&#183;</span> <span class="here">fault</span></span>
+  </header>
+  <div class="content">
+    <div class="sys">TRANSMISSION FAULT // ROUTE NOT FOUND</div>
+    <div class="alert">err 404: no carrier on specified address.</div>
+    <div class="prompt-line">&#8250; <a href="/">reconnect to terminal</a></div>
+  </div>
+</div>
+</body>
+</html>

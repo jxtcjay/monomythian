@@ -27,6 +27,19 @@ node build.js        # regenerates index.html and monomythian.html
 
 No dependencies. No compilation. Nothing to install.
 
+### Deploy on Vercel
+
+The project is pre-configured for Vercel with zero extra setup:
+
+1. **Via Git Integration:** Push this repository to GitHub/GitLab/Bitbucket, import the repository into your [Vercel Dashboard](https://vercel.com/new), and click **Deploy**. Vercel will automatically run `npm run build` and serve the site with clean URLs and optimized asset caching.
+2. **Via Vercel CLI:** Run `npx vercel` from the project directory.
+
+The deployment includes:
+- `vercel.json` with build commands, clean URLs, and media cache headers
+- `.vercelignore` to keep spoilers (`PLAYTHROUGH.md`), design docs, and test runners private
+- Custom terminal-styled `404.html`
+- Diegetic SVG favicon and Open Graph metadata
+
 ---
 
 ## How to play
