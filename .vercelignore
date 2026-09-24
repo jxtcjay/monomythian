@@ -1,0 +1,12 @@
+# Spoilers, design docs, and playthrough reference
+PLAYTHROUGH.md
+MONOMYTHIAN-Act1-Dialogue.docx
+
+# Test suites and simulation runners
+smoke-test.js
+run-sim.js
+dialogue-sweep.js
+
+# Claude and local editor state
+.claude/
+.DS_Store

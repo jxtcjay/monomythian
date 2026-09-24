@@ -4,6 +4,7 @@
   "private": true,
   "description": "A terminal narrative game set after humanity's pyrrhic war on its machines. Act 1.",
   "scripts": {
+    "dev": "python3 -m http.server 8000",
     "build": "node build.js",
     "start": "python3 -m http.server 8000",
     "serve": "python3 -m http.server 8000",
