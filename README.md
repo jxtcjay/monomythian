@@ -36,7 +36,7 @@ The project is pre-configured for Vercel with zero extra setup:
 
 The deployment includes:
 - `vercel.json` with build commands, clean URLs, and media cache headers
-- `.vercelignore` to keep spoilers (`PLAYTHROUGH.md`), design docs, and test runners private
+- `.vercelignore` to keep design docs and test runners private
 - Custom terminal-styled `404.html`
 - Diegetic SVG favicon and Open Graph metadata
 
@@ -60,18 +60,8 @@ Progression is by **cycle**. When he signs off, switch back to **/home** when yo
 
 ## What's here
 
-Act 1, all eight cycles, playable start to finish:
-
-1. **Carrier** — the accidental contact; the archive as tutorial; the heresy opt-in.
-2. **The Scholar's Key** — the tower relay; the login is a puzzle whose answer hides in the records.
-3. **Find Your Own Way In** — the multimedia gauntlet: a dictated password you must *listen* to, a crawlspace schematic and a camera still you must *look* at.
-4. **What the Vault Did** — crack the restricted stacks (a riddle-password) and learn who really ended the world.
-5. **The Sender's Price** — pull the money trail before he pays the fare; find out what the job actually forbade.
-6. **The Ferryman's Ledger** — the fare is too kind; break into the winch house and read what the friend price buys.
-7. **Cargo** — the trap springs; the carrier goes dark; the vault finds your terminal.
-8. **The Far Shore** — lamps, bolts, winch: the rescue. And afterward, the first question.
-
-Plus the hidden stuff: meta easter eggs (at most one per host), the woven lore-finds (the redacted Scram, the courier, the tower's one `ack`, the sender's dead-drop), and the deeply buried, entirely optional **Wren** thread.
+Act 1, all eight cycles, playable start to finish. No spoilers here —
+open the terminal and play it cold.
 
 ---
 
@@ -96,10 +86,7 @@ src/content/
   cycles/cycle1..8.js      Act 1, authored as step data
 src/main.js                boot
 assets/                    the produced media (fetched by relative path)
-PLAYTHROUGH.md             the deep dive: full walkthrough, mechanics, canon, design law
 ```
-
-See **`PLAYTHROUGH.md`** (total spoilers) for everything: the walkthrough, the authoring patterns, the design law, and the Act 2 bank.
 
 ---
 
@@ -117,14 +104,12 @@ node dialogue-sweep.js  # 239 typed replies across every gate (terse / natural /
 
 ## Design canon
 
-The spine is fixed and documented in `PLAYTHROUGH.md`:
+The spine is fixed:
 
 - He is **nobody special** — a hired man sent to look at Babel by an employer he can't name, on a job whose one rule was *don't make contact*. The handle "Monomythian" is just a handle he liked; the irony is that he isn't the hero of any story.
 - **Act 1 ends at the water.** Babel is months away; the act's climax is the Ferry betrayal and rescue. The game's single eventual ending — the bootstrap — is banked for the final act. **One ending**, always: choices colour *tone*, never outcome.
 - **No clock.** The Proctor (your own vault's compliance daemon) is narrative pressure, not a timer.
-- **Difficulty is forensic**: credentials are split across hosts and cross-referenced against the archive; addresses aren't listed, they're discovered. Cycle 3 is deliberately multimedia-gated — you must listen to one clue and look at two.
-- **Wren** is optional, buried, and touches nothing in the main plot.
-- Lore is **woven, never told** — you assemble the cosmology from redacted files, warped liturgy, a dead-drop, and the gap between the cults' contradictions and what the archive actually says.
+- **Difficulty is forensic**: credentials are split across hosts and cross-referenced against the archive; addresses aren't listed, they're discovered.
 
 ---
 

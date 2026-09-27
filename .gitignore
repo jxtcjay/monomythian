@@ -11,5 +11,9 @@ Thumbs.db
 .claude/
 .vercel/
 
+# spoilers / playthrough reference — never track these
+PLAYTHROUGH.md
+MONOMYTHIAN-Act1-Dialogue.docx
+
 # logs
 *.log

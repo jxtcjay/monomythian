@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>THE MONOMYTHIAN</title>
 <meta name="description" content="A terminal narrative game set after humanity's pyrrhic war on its machines. Act 1.">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e0e0e">
 <meta property="og:title" content="THE MONOMYTHIAN">
 <meta property="og:description" content="A terminal, a dead world, and a wrong number across the apocalypse.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="THE MONOMYTHIAN">
 <meta name="twitter:description" content="A terminal, a dead world, and a wrong number across the apocalypse.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='50' height='90' x='25' y='5' fill='%230e0e0e'/></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><style>@media (prefers-color-scheme: dark) { rect { fill: %23f2f2f2 } }</style><rect width='50' height='90' x='25' y='5' fill='%230e0e0e'/></svg>">
 <style>
 :root{
+  color-scheme: light dark;
   --bg:#ffffff;
   --ink:#0e0e0e;
   --dim:#8c8c8c;
@@ -23,8 +25,22 @@
   --alert:#a8261c;
   --inv-bg:#0e0e0e;
   --inv-ink:#ffffff;
+  --sel-desc:#bdbdbd;
   --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
   --w: 780px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e0e0e;
+    --ink:#f2f2f2;
+    --dim:#9a9a9a;
+    --faint:#3a3a3a;
+    --line:#262626;
+    --alert:#e0685c;
+    --inv-bg:#f2f2f2;
+    --inv-ink:#0e0e0e;
+    --sel-desc:#555555;
+  }
 }
 *{box-sizing:border-box;}
 html,body{height:100%;margin:0;}
@@ -113,7 +129,7 @@ body[data-app="help"] .line.app-help{display:block;}
 .smi .cmd{flex:0 0 110px;}
 .smi .desc{color:var(--dim);}
 .smi.sel{background:var(--inv-bg);color:var(--inv-ink);}
-.smi.sel .desc{color:#bdbdbd;}
+.smi.sel .desc{color:var(--sel-desc);}
 .inputbox{display:flex;align-items:center;gap:10px;border:1px solid var(--ink);border-radius:0;padding:7px 11px;}
 .prompt{color:var(--dim);user-select:none;white-space:nowrap;}
 #cmd{flex:1;border:none;outline:none;background:transparent;color:var(--ink);font:inherit;text-transform:lowercase;}

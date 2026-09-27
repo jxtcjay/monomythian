@@ -1,4 +1,5 @@
 :root{
+  color-scheme: light dark;
   --bg:#ffffff;
   --ink:#0e0e0e;
   --dim:#8c8c8c;
@@ -7,8 +8,22 @@
   --alert:#a8261c;
   --inv-bg:#0e0e0e;
   --inv-ink:#ffffff;
+  --sel-desc:#bdbdbd;
   --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
   --w: 780px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e0e0e;
+    --ink:#f2f2f2;
+    --dim:#9a9a9a;
+    --faint:#3a3a3a;
+    --line:#262626;
+    --alert:#e0685c;
+    --inv-bg:#f2f2f2;
+    --inv-ink:#0e0e0e;
+    --sel-desc:#555555;
+  }
 }
 *{box-sizing:border-box;}
 html,body{height:100%;margin:0;}
@@ -97,7 +112,7 @@ body[data-app="help"] .line.app-help{display:block;}
 .smi .cmd{flex:0 0 110px;}
 .smi .desc{color:var(--dim);}
 .smi.sel{background:var(--inv-bg);color:var(--inv-ink);}
-.smi.sel .desc{color:#bdbdbd;}
+.smi.sel .desc{color:var(--sel-desc);}
 .inputbox{display:flex;align-items:center;gap:10px;border:1px solid var(--ink);border-radius:0;padding:7px 11px;}
 .prompt{color:var(--dim);user-select:none;white-space:nowrap;}
 #cmd{flex:1;border:none;outline:none;background:transparent;color:var(--ink);font:inherit;text-transform:lowercase;}

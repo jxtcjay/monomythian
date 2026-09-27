@@ -10,12 +10,12 @@ When a new asset lands, add its descriptor to `hosts.js` then (see below).
 
 ## Produced & wired
 
-| File | Type | Host | Brief |
-|---|---|---|---|
-| `camera7.png` | image | ashline-substation | Mono at the edge of the light; three lights closing |
-| `crew_handoff.mp3` | audio | duct-maintenance | The dictated substation pass — the ONLY path; the player must listen |
-| `duct.png` | image | duct-maintenance | Crawlspace schematic |
-| `matins.mp3` | audio | shrine-server | The warping "remain calm" loop (banked host, Act 2) |
+| File | Type | Host |
+|---|---|---|
+| `camera7.png` | image | ashline-substation |
+| `crew_handoff.mp3` | audio | duct-maintenance |
+| `duct.png` | image | duct-maintenance |
+| `matins.mp3` | audio | shrine-server |
 
 Produced files carry no `desc` — choosing them in `/files` just downloads them again;
 they're meant to be viewed off-app.
@@ -24,8 +24,7 @@ they're meant to be viewed off-app.
 
 The sender-sigil trio (`job_order_slip`, `drop_note`, `ledger_scan`), `carrier`
 (tower audio), the deepstacks scans, and the banked Act-2 pieces (`chart_fragment`,
-perimeter media). Design rationale and the sigil rule: **`../PLAYTHROUGH.md`** §7.
-Use real extensions when producing (`.png`/`.jpg`/`.mp3`).
+perimeter media). Use real extensions when producing (`.png`/`.jpg`/`.mp3`).
 
 ## Two rules
 
@@ -35,8 +34,6 @@ Use real extensions when producing (`.png`/`.jpg`/`.mp3`).
 2. **Media never gates a puzzle.** Every credential clue and report keyword lives in a
    *text* file that reads in-terminal. `smoke-test.js` enforces this: it fails if a
    critical-path file is ever converted to a binary. Media is evidence, not instruction.
-   **One CJ-sanctioned exception:** `crew_handoff.mp3` dictates the substation pass and
-   no text spells it — the smoke test enforces the exception, not the rule, there.
 
 ## Shipping
 
